@@ -10,7 +10,7 @@ import pluginFilters from "./_config/filters.js";
 export default async function(eleventyConfig) {
 	// Drafts, see also _data/eleventyDataSchema.js
 	eleventyConfig.addPreprocessor("drafts", "*", (data, content) => {
-		if(data.draft && process.env.ELEVENTY_RUN_MODE === "build") {
+		if (data.draft && process.env.ELEVENTY_RUN_MODE === "build") {
 			return false;
 		}
 	});
@@ -53,7 +53,7 @@ export default async function(eleventyConfig) {
 		stylesheet: "pretty-atom-feed.xsl",
 		templateData: {
 			eleventyNavigation: {
-				key: "Feed",
+				key: "feed",
 				order: 4
 			}
 		},
@@ -63,11 +63,11 @@ export default async function(eleventyConfig) {
 		},
 		metadata: {
 			language: "en",
-			title: "Blog Title",
+			title: "0x1eaf",
 			subtitle: "This is a longer description about your blog.",
 			base: "https://example.com/",
 			author: {
-				name: "Your Name"
+				name: "0x1eaf/lucca"
 			}
 		}
 	});

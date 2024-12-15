@@ -1,15 +1,34 @@
 ---js
 const eleventyNavigation = {
-	key: "Home",
+	key: "home",
 	order: 1
 };
 
 const numberOfLatestPostsToShow = 3;
 ---
+
+<h1>hi there 👋</h1>
+<main>
+	<p>
+	i'm lucca or 0x1eaf (pronounced "leaf"), pronouns it/its. i'm software developer
+	who lives in uppsala, sweden.
+	</p>
+	<p>
+	professionally i'm a java backend developer, but
+	outside work i like to explore many different topics in computer science.
+	</p>
+	<p>
+	i'm currently working through the <a href="https://cs.ossu.dev/">OSSU computer science curriculum</a>.
+	you can track my progress <a href ="'/ossu/progress'">here</a>
+	</p>
+
+</main>
+
+
+{# wait till i have an actual blog
 {% set postsCount = collections.posts | length %}
 {% set latestPostsCount = postsCount | min(numberOfLatestPostsToShow) %}
-<h1>Latest {{ latestPostsCount }} Post{% if latestPostsCount != 1 %}s{% endif %}</h1>
-
+<h1>latest {{ latestPostsCount }} post{% if latestPostsCount != 1 %}s{% endif %}</h1>
 {% set postslist = collections.posts | head(-1 * numberOfLatestPostsToShow) %}
 {% set postslistCounter = postsCount %}
 {% include "postslist.njk" %}
