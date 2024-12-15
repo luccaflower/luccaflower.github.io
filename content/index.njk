@@ -25,7 +25,6 @@ const numberOfLatestPostsToShow = 3;
 </main>
 
 
-{# wait till i have an actual blog
 {% set postsCount = collections.posts | length %}
 {% set latestPostsCount = postsCount | min(numberOfLatestPostsToShow) %}
 <h1>latest {{ latestPostsCount }} post{% if latestPostsCount != 1 %}s{% endif %}</h1>

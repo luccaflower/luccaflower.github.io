@@ -1,11 +1,11 @@
 export default {
 	title: "0x1eaf",
-	url: "https://luccaflower.github.io/",
+	url: "https://0x1eaf.dev",
 	language: "en",
-	description: "Personal blog and CV",
+	description: "Personal site and blog",
 	author: {
 		name: "0x1eaf/lucca",
 		email: "lucca.christiansen@gmail.com",
-		url: "https://example.com/about-me/"
+		url: "https://0x1eaf.dev"
 	}
 }
