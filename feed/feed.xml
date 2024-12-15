@@ -2,12 +2,25 @@
 <?xml-stylesheet href="pretty-atom-feed.xsl" type="text/xsl"?>
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
   <title>0x1eaf</title>
-  <subtitle>This is a longer description about your blog.</subtitle>
-  <link href="https://example.com/feed/feed.xml" rel="self" />
-  <link href="https://example.com/" />
-  <updated>2024-12-15T19:18:52Z</updated>
-  <id>https://example.com/</id>
+  <subtitle>Personal site and blog.</subtitle>
+  <link href="https://0x1eaf.dev/feed/feed.xml" rel="self" />
+  <link href="https://0x1eaf.dev/" />
+  <updated>2024-12-15T21:35:00Z</updated>
+  <id>https://0x1eaf.dev/</id>
   <author>
     <name>0x1eaf/lucca</name>
   </author>
+  <entry>
+    <title>We&#39;re live</title>
+    <link href="https://0x1eaf.dev/blog/hello/" />
+    <updated>2024-12-15T21:35:00Z</updated>
+    <id>https://0x1eaf.dev/blog/hello/</id>
+    <content type="html">&lt;p&gt;Finally got around to registering a domain name and picking a static
+site generator to use for my personal site (&lt;a href=&quot;https://www.11ty.dev/&quot;&gt;11ty&lt;/a&gt;, if you&#39;re curious).&lt;/p&gt;
+&lt;p&gt;I figured it would be nice to have a place to write about various things I learn along the
+way, or silly adventures in technology would be nice, as well as maybe
+hosting an online CV of sorts.&lt;/p&gt;
+&lt;p&gt;Let&#39;s see where this goes :3&lt;/p&gt;
+</content>
+  </entry>
 </feed>
