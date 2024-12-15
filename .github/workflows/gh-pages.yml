@@ -45,5 +45,6 @@ jobs:
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          cname: 0x1eaf.dev
           publish_dir: ./_site
 
