@@ -3,10 +3,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
   <title>0x1eaf</title>
   <subtitle>This is a longer description about your blog.</subtitle>
-  <link href="https://example.com/eleventy-base-blog/feed/feed.xml" rel="self" />
-  <link href="https://example.com/eleventy-base-blog/" />
-  <updated>2024-12-15T17:51:21Z</updated>
-  <id>https://example.com/eleventy-base-blog/</id>
+  <link href="https://example.com/feed/feed.xml" rel="self" />
+  <link href="https://example.com/" />
+  <updated>2024-12-15T18:07:29Z</updated>
+  <id>https://example.com/</id>
   <author>
     <name>0x1eaf/lucca</name>
   </author>

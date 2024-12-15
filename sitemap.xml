@@ -2,27 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 	
 	<url>
-		<loc>https://luccaflower.github.io/eleventy-base-blog/blog/</loc>
+		<loc>https://luccaflower.github.io/blog/</loc>
 		<lastmod>2024-12-15</lastmod>
 	</url>
 	
 	<url>
-		<loc>https://luccaflower.github.io/eleventy-base-blog/</loc>
+		<loc>https://luccaflower.github.io/</loc>
 		<lastmod>2024-12-15</lastmod>
 	</url>
 	
 	<url>
-		<loc>https://luccaflower.github.io/eleventy-base-blog/ossu/progress/</loc>
+		<loc>https://luccaflower.github.io/ossu/progress/</loc>
 		<lastmod>2024-12-15</lastmod>
 	</url>
 	
 	<url>
-		<loc>https://luccaflower.github.io/eleventy-base-blog/tags/</loc>
+		<loc>https://luccaflower.github.io/tags/</loc>
 		<lastmod>2024-12-15</lastmod>
 	</url>
 	
 	<url>
-		<loc>https://luccaflower.github.io/eleventy-base-blog/feed/feed.xml</loc>
+		<loc>https://luccaflower.github.io/feed/feed.xml</loc>
 		<lastmod>2024-12-15</lastmod>
 	</url>
 </urlset>
