@@ -13,20 +13,14 @@ systems, quick to isolate and fix errors, disciplined when developing
 new features.
 
 # Experience
-
-- **System Developer at Mahjong Logic**\
-	(Feb. 2022 - present)
-	- Extensive usage of the Spring Framework
-	- Upgraded many components to Java 17/21 from Java 11
-	- Streamlined the build process of critical components to make
-		maintenance and updating dependencies easier.
+- **System Developer at Mahjong Logic** (Feb. 2022 - present)
+	- Java 11/17/21
+	- Spring Framework 5, Spring Boot 3
 	- Introduced CI/CD pipelines to several projects.
-	- Made many components container ready.
-	- Migrated a legacy E2E test suite of several hundred tests to CI/CD.
-	  These tests had previously been dormant for several years.
-	- Made several new deployments of the entire system according to
-		Infrastructure as Code principles on AWS.
-	- Developed several new Spring Boot components from scratch.
+	- AWS deployments using Docker Swarm
+- **Test Automation Intern at Seluxit** (Aug. 2021-Oct. 2021)
+	- E2E test cases for an IoT dashboard using the (now-defunct) TestProject framework.
+	- Java integration library between TestProject and the IoT solution.
 
 # Education
 - **Computer Science (Academic Profession)**\
