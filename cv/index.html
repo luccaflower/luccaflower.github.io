@@ -3,180 +3,12 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>We&#39;re live</title>
-		<meta name="description" content="First post!!">
+		<title>CV</title>
+		<meta name="description" content="Personal site and blog">
 		<link rel="alternate" href="feed/feed.xml" type="application/atom+xml" title="0x1eaf">
 
 		<meta name="generator" content="Eleventy v3.0.0">
-		<style>/**
- * okaidia theme for JavaScript, CSS and HTML
- * Loosely based on Monokai textmate theme by http://www.monokai.nl/
- * @author ocodia
- */
-
-code[class*="language-"],
-pre[class*="language-"] {
-	color: #f8f8f2;
-	background: none;
-	text-shadow: 0 1px rgba(0, 0, 0, 0.3);
-	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-	font-size: 1em;
-	text-align: left;
-	white-space: pre;
-	word-spacing: normal;
-	word-break: normal;
-	word-wrap: normal;
-	line-height: 1.5;
-
-	-moz-tab-size: 4;
-	-o-tab-size: 4;
-	tab-size: 4;
-
-	-webkit-hyphens: none;
-	-moz-hyphens: none;
-	-ms-hyphens: none;
-	hyphens: none;
-}
-
-/* Code blocks */
-pre[class*="language-"] {
-	padding: 1em;
-	margin: .5em 0;
-	overflow: auto;
-	border-radius: 0.3em;
-}
-
-:not(pre) > code[class*="language-"],
-pre[class*="language-"] {
-	background: #272822;
-}
-
-/* Inline code */
-:not(pre) > code[class*="language-"] {
-	padding: .1em;
-	border-radius: .3em;
-	white-space: normal;
-}
-
-.token.comment,
-.token.prolog,
-.token.doctype,
-.token.cdata {
-	color: #8292a2;
-}
-
-.token.punctuation {
-	color: #f8f8f2;
-}
-
-.token.namespace {
-	opacity: .7;
-}
-
-.token.property,
-.token.tag,
-.token.constant,
-.token.symbol,
-.token.deleted {
-	color: #f92672;
-}
-
-.token.boolean,
-.token.number {
-	color: #ae81ff;
-}
-
-.token.selector,
-.token.attr-name,
-.token.string,
-.token.char,
-.token.builtin,
-.token.inserted {
-	color: #a6e22e;
-}
-
-.token.operator,
-.token.entity,
-.token.url,
-.language-css .token.string,
-.style .token.string,
-.token.variable {
-	color: #f8f8f2;
-}
-
-.token.atrule,
-.token.attr-value,
-.token.function,
-.token.class-name {
-	color: #e6db74;
-}
-
-.token.keyword {
-	color: #66d9ef;
-}
-
-.token.regex,
-.token.important {
-	color: #fd971f;
-}
-
-.token.important,
-.token.bold {
-	font-weight: bold;
-}
-.token.italic {
-	font-style: italic;
-}
-
-.token.entity {
-	cursor: help;
-}
-/*
- * New diff- syntax
- */
-
-pre[class*="language-diff-"] {
-	--eleventy-code-padding: 1.25em;
-	padding-left: var(--eleventy-code-padding);
-	padding-right: var(--eleventy-code-padding);
-}
-.token.deleted {
-	background-color: hsl(0, 51%, 37%);
-	color: inherit;
-}
-.token.inserted {
-	background-color: hsl(126, 31%, 39%);
-	color: inherit;
-}
-
-/* Make the + and - characters unselectable for copy/paste */
-.token.prefix.unchanged,
-.token.prefix.inserted,
-.token.prefix.deleted {
-	-webkit-user-select: none;
-	user-select: none;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding-top: 2px;
-	padding-bottom: 2px;
-}
-.token.prefix.inserted,
-.token.prefix.deleted {
-	width: var(--eleventy-code-padding);
-	background-color: rgba(0,0,0,.2);
-}
-
-/* Optional: full-width background color */
-.token.inserted:not(.prefix),
-.token.deleted:not(.prefix) {
-	display: block;
-	margin-left: calc(-1 * var(--eleventy-code-padding));
-	margin-right: calc(-1 * var(--eleventy-code-padding));
-	text-decoration: none; /* override del, ins, mark defaults */
-	color: inherit; /* override del, ins, mark defaults */
-}
-/* This is an arbitrary CSS string added to the bundle */
+		<style>/* This is an arbitrary CSS string added to the bundle */
 /* Defaults */
 :root {
 	--font-family: -apple-system, system-ui, monospace;
@@ -447,7 +279,7 @@ header {
 				<ul class="nav">
 					<li class="nav-item"><a href="/">home</a></li>
 					<li class="nav-item"><a href="/blog/">blog</a></li>
-					<li class="nav-item"><a href="/cv/">cv</a></li>
+					<li class="nav-item"><a href="/cv/" aria-current="page">cv</a></li>
 					<li class="nav-item"><a href="/ossu/progress/">ossu progress</a></li>
 					<li class="nav-item"><a href="/feed/feed.xml">rss/atom</a></li>
 					<li class="github"><a href="https://github.com/luccaflower">github</a>
@@ -458,24 +290,61 @@ header {
 		<main id="skip">
 			<heading-anchors>
 				
-<h1 id="we-re-live">We&#39;re live</h1>
-
-<ul class="post-metadata">
-	<li><time datetime="2024-12-15">15 December 2024</time></li>
+<h1 id="summary">Summary</h1>
+<p>Test-driven Java developer experienced with the maintenance and
+development of legacy systems. Skilled at exploring complex software
+systems, quick to isolate and fix errors, disciplined when developing
+new features.</p>
+<h1 id="experience">Experience</h1>
+<ul>
+<li><strong>System Developer at Mahjong Logic</strong><br>
+(Feb. 2022 - present)
+<ul>
+<li>Extensive usage of the Spring Framework</li>
+<li>Upgraded many components to Java 17/21 from Java 11</li>
+<li>Streamlined the build process of critical components to make
+maintenance and updating dependencies easier.</li>
+<li>Introduced CI/CD pipelines to several projects.</li>
+<li>Made many components container ready.</li>
+<li>Migrated a legacy E2E test suite of several hundred tests to CI/CD.
+These tests had previously been dormant for several years.</li>
+<li>Made several new deployments of the entire system according to
+Infrastructure as Code principles on AWS.</li>
+<li>Developed several new Spring Boot components from scratch.</li>
 </ul>
-
-<p>Finally got around to registering a domain name and picking a static
-site generator to use for my personal site (<a href="https://www.11ty.dev/">11ty</a>, if you're curious).</p>
-<p>I figured it would be nice to have a place to write about various things I learn along the
-way, or silly adventures in technology would be nice, as well as maybe
-hosting an online CV of sorts.</p>
-<p>Let's see where this goes :3</p>
+</li>
+</ul>
+<h1 id="education">Education</h1>
+<ul>
+<li><strong>Computer Science (Academic Profession)</strong><br>
+University College of Northern Denmark<br>
+(Feb. 2019 - Jan. 2022)
+<ul>
+<li>Programming (Java, C#, Rust)</li>
+<li>System development (Unified Process and Agile methodologies)</li>
+<li>Technology (Distributed systems, networking, .NET, databases)</li>
+<li>Project-oriented</li>
+</ul>
+</li>
+</ul>
+<h1 id="skills">Skills</h1>
+<ul>
+<li>Java 11/17/21</li>
+<li>IntelliJ Idea</li>
+<li>MariaDB/MySQL</li>
+<li>Docker and Docker Swarm</li>
+<li>Git</li>
+<li>GitLab CI/CD</li>
+<li>JUnit 5</li>
+<li>Spring Framework 5, Spring Boot 3</li>
+<li>Maven</li>
+</ul>
 
 
 			</heading-anchors>
 		</main>
 
-		<!-- This page `/blog/hello/` was built on 2024-12-16T15:18:58.011Z -->
+		<!-- This page `/cv/` was built on 2024-12-16T15:18:58.011Z -->
 		<script type="module" src="/dist/rJ3_G-2ArF.js"></script>
 	</body>
 </html>
