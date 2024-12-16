@@ -36,6 +36,7 @@ new features.
 - MariaDB/MySQL
 - Docker and Docker Swarm
 - Git
+- Linux
 - GitLab CI/CD
 - JUnit 5
 - Spring Framework 5, Spring Boot 3
