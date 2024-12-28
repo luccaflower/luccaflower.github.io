@@ -5,11 +5,65 @@
   <subtitle>Personal site and blog.</subtitle>
   <link href="https://0x1eaf.dev/feed/feed.xml" rel="self" />
   <link href="https://0x1eaf.dev/" />
-  <updated>2024-12-15T21:35:00Z</updated>
+  <updated>2024-12-28T12:56:57Z</updated>
   <id>https://0x1eaf.dev/</id>
   <author>
     <name>0x1eaf/lucca</name>
   </author>
+  <entry>
+    <title>OSSU 2024 In Review</title>
+    <link href="https://0x1eaf.dev/blog/ossu-2024-review/" />
+    <updated>2024-12-28T12:56:57Z</updated>
+    <id>https://0x1eaf.dev/blog/ossu-2024-review/</id>
+    <content type="html">&lt;p&gt;This year I started the &lt;a href=&quot;https://cs.ossu.dev/&quot;&gt;OSSU Computer Science curriculum&lt;/a&gt; (with modifications). Here&#39;s how that has gone as of the end of 2024:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Nand2Tetris&lt;/strong&gt;: ✅ Completed, 2024-04-20&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Systematic Program Design&lt;/strong&gt;: ✅ Completed, 2024-09-21&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Discrete Mathematics by Epp, S.&lt;/strong&gt; ⏩ In-progress, chapter 8/12&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Introduction to Computer Systems&lt;/strong&gt; ⏩ In-progress, lecture 15/27, lab 4/7&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;nand2tetris&quot;&gt;Nand2Tetris&lt;/h2&gt;
+&lt;p&gt;This course taught me that I can learn anything I want. It also taught me a bunch of cool things about computer architecture.&lt;/p&gt;
+&lt;p&gt;Nand2Tetris is a course that takes you all the way from basic digital logic circuits to computer that can (int theory) run tetris. Through a series of projects you get to specify all the hardware components of a whole computer (they give you a clock, a screen, and a keyboard for free), make an assembler, a two-stage compiler for a simple programming language, and an OS written in that language.&lt;/p&gt;
+&lt;p&gt;The course gives each of its subjects a surface-level treatment, focusing instead on how each subject relates to the other, For an introductory computer architecture course, I think that is perfect. You really get an intuition for &lt;em&gt;why&lt;/em&gt; things are the way they are, while at the same time giving you an opportunity to get a feel for a variety of subjects in Computer Science that you can then choose to make a deeper dive into.&lt;/p&gt;
+&lt;p&gt;It&#39;s also great for building intuition about how computers actually. Before this course, the low-level mechanics of how memory and CPU instructions work were pure magic, but afterwards I had all the tools I needed to reason about it. This was especially helpful for the first half of the Introduction to Computer Systems course (especially the machine programming parts), since most of it was just the specifics of how x86-64 implements concepts I already learned in N2T.&lt;/p&gt;
+&lt;h2 id=&quot;systematic-program-design&quot;&gt;Systematic Program Design&lt;/h2&gt;
+&lt;p&gt;This is a solid small-scale software design course. I mostly took this course to see what sort of programming practices they&#39;re teaching young programmers these days, and I&#39;m happy to report that the state of things is pretty good at this level at least. I&#39;m especially happy about the TDD-style approach to things, even though this course&#39;s variation of it is more of a top-down approach than what Kent Beck had in mind. I also think if you treat the design recipes as ways to reason about a problem, and the templates as drilling exercises to get you used to that kind of reasoning, you&#39;ll get a lot out of this course. You&#39;re not supposed be copy-pasting templates in your professional work, but doing it the first few times will help you establish those thought patterns.&lt;/p&gt;
+&lt;h2 id=&quot;discrete-mathematics&quot;&gt;Discrete Mathematics&lt;/h2&gt;
+&lt;p&gt;I think I&#39;ve learned how to enjoy math. I don&#39;t know if it&#39;s The Joy of Learning in general, or if there&#39;s something specific about math. I think part of it might be that I really enjoy exploring systems of logic, and what is mathematics if not that. So far in this book I&#39;ve explored propositional logic, number theory, sequences and induction, set theory, and relations and functions. I will admit one thing, however: number theory is not really my jam. I&#39;ve noticed that my progress slows down significantly the more number theory I&#39;m doing. Everything else is super cool though.&lt;/p&gt;
+&lt;h2 id=&quot;introduction-to-computer-systems&quot;&gt;Introduction to Computer Systems&lt;/h2&gt;
+&lt;p&gt;I&#39;m going to make a bold claim. Carnegie Mellon University consistently ranks among the best universities in the world for Computer Science, and this course is one of the major reasons why. It covers a lot of the same material as Nand2Tetris but in much greater detail, and in the context of real-world hardware and software. The best way I can describe this course is that it bridges the gap between hardware and operating system. Like Nand2Tetris, it is not a course that covers one singular subject, but rather a collection of subjects that all relate to and build on each other. So far I&#39;ve learned about binary data representation (I finally understand how floats work), x86-64 machine code, pipelining and optimization, the memory hierarchy, and a bit of OS stuff. Now, this is a difficult course. You cannot simply read the book and watch the lectures, and then go on your merry day, you will not learn a thing from that. You have to do the practice problems from the book, you have to do the labs, and sometimes, it takes a few tries to fully &lt;em&gt;get&lt;/em&gt; a concept (I had to do several passes on code optimization in order to fully get how to reason about data-dependencies and pipelined CPU-instructions), but once you &lt;em&gt;get it&lt;/em&gt;, it is so rewarding. One thing to note is, you &lt;em&gt;need&lt;/em&gt; the textbook, which is called Computer Systems: A Programmer&#39;s Perspective, you need the US-edition specifically, and there are no good versions online, in stores or on the seven seas. And the print version is $160. So keep that in mind.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Code blocks</title>
+    <link href="https://0x1eaf.dev/blog/code-block-test/" />
+    <updated>2024-12-28T12:56:57Z</updated>
+    <id>https://0x1eaf.dev/blog/code-block-test/</id>
+    <content type="html">&lt;p&gt;In my quest to do as little web-development as possible when making this
+site, I decided to just fork this &lt;a href=&quot;https://0x1eaf.dev/blog/code-block-test/link-here&quot;&gt;base blog&lt;/a&gt; repo, and make
+some minor changes to the CSS to fit my needs (such as setting this
+lovely gruvbox-dark color-scheme). As it turns out, this base blog comes
+with the &lt;a href=&quot;https://0x1eaf.dev/blog/code-block-test/link-here&quot;&gt;syntax highlighting plugin&lt;/a&gt; configured, which uses
+PrismJS to do syntax-highlighting on code snippets. It even comes with a
+few preset CSS themes. Now, none of those themes were gruvbox-dark, but
+no problem, I just copied the solarized theme and changed the colors to
+(mostly) match my neovim color-scheme. I think it turned out quite
+nicely:&lt;/p&gt;
+&lt;pre class=&quot;language-c&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-c&quot;&gt;&lt;span class=&quot;token comment&quot;&gt;//comment&lt;/span&gt;
+&lt;span class=&quot;token keyword&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;int&lt;/span&gt; argc&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;char&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt; argv&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;token function&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;Hello, World!&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&quot;language-rust&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-rust&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;token function-definition function&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;token macro property&quot;&gt;println!&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;Hello, World&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&quot;language-java&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-java&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;token class-name&quot;&gt;Main&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;token keyword&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token class-name&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;]&lt;/span&gt; args&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+		&lt;span class=&quot;token class-name&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;out&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;Hello, World!&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+	&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+</content>
+  </entry>
   <entry>
     <title>We&#39;re live</title>
     <link href="https://0x1eaf.dev/blog/hello/" />
