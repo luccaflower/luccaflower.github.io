@@ -2,6 +2,9 @@
 title: "OSSU 2024 In Review"
 description: "I've had a productive year"
 date: git Last Modified
+tags:
+  - journal
+  - ossu
 ---
 This year I started the [OSSU Computer Science curriculum](https://cs.ossu.dev/) (with modifications). Here's how that has gone as of the end of 2024:
 * **Nand2Tetris**: ✅ Completed, 2024-04-20
