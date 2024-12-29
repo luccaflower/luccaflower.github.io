@@ -5,7 +5,7 @@
   <subtitle>Personal site and blog.</subtitle>
   <link href="https://0x1eaf.dev/feed/feed.xml" rel="self" />
   <link href="https://0x1eaf.dev/" />
-  <updated>2024-12-28T13:16:37Z</updated>
+  <updated>2024-12-29T17:51:08Z</updated>
   <id>https://0x1eaf.dev/</id>
   <author>
     <name>0x1eaf/lucca</name>
@@ -13,7 +13,7 @@
   <entry>
     <title>OSSU 2024 In Review</title>
     <link href="https://0x1eaf.dev/blog/ossu-2024-review/" />
-    <updated>2024-12-28T13:16:37Z</updated>
+    <updated>2024-12-29T17:51:08Z</updated>
     <id>https://0x1eaf.dev/blog/ossu-2024-review/</id>
     <content type="html">&lt;p&gt;This year I started the &lt;a href=&quot;https://cs.ossu.dev/&quot;&gt;OSSU Computer Science curriculum&lt;/a&gt; (with modifications). Here&#39;s how that has gone as of the end of 2024:&lt;/p&gt;
 &lt;ul&gt;
@@ -79,13 +79,13 @@ too good to pass up on.&lt;/p&gt;
   <entry>
     <title>Code blocks</title>
     <link href="https://0x1eaf.dev/blog/code-block-test/" />
-    <updated>2024-12-28T13:16:37Z</updated>
+    <updated>2024-12-29T17:51:08Z</updated>
     <id>https://0x1eaf.dev/blog/code-block-test/</id>
     <content type="html">&lt;p&gt;In my quest to do as little web-development as possible when making this
-site, I decided to just fork this &lt;a href=&quot;https://0x1eaf.dev/blog/code-block-test/link-here&quot;&gt;base blog&lt;/a&gt; repo, and make
+site, I decided to just fork this &lt;a href=&quot;https://github.com/11ty/eleventy-base-blog/&quot;&gt;base blog&lt;/a&gt; repo, and make
 some minor changes to the CSS to fit my needs (such as setting this
 lovely gruvbox-dark color-scheme). As it turns out, this base blog comes
-with the &lt;a href=&quot;https://0x1eaf.dev/blog/code-block-test/link-here&quot;&gt;syntax highlighting plugin&lt;/a&gt; configured, which uses
+with the &lt;a href=&quot;https://www.11ty.dev/docs/plugins/syntaxhighlight/&quot;&gt;syntax highlighting plugin&lt;/a&gt; configured, which uses
 PrismJS to do syntax-highlighting on code snippets. It even comes with a
 few preset CSS themes. Now, none of those themes were gruvbox-dark, but
 no problem, I just copied the solarized theme and changed the colors to
