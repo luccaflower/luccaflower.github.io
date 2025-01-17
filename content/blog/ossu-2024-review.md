@@ -1,7 +1,7 @@
 ---
 title: "OSSU 2024 In Review"
 description: "I've had a productive year"
-date: git Last Modified
+date: 2024-12-28T20:00:00Z
 tags:
   - journal
   - ossu

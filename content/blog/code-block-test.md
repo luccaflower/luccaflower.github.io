@@ -1,7 +1,7 @@
 ---
 title: "Code blocks"
 description: "Keeping the snippets consistent with the theme"
-date: git Last Modified
+date: 2024-12-28T19:00:00Z
 ---
 In my quest to do as little web-development as possible when making this
 site, I decided to just fork this [base blog](https://github.com/11ty/eleventy-base-blog/) repo, and make
