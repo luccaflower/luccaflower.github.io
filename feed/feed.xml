@@ -5,81 +5,15 @@
   <subtitle>Personal site and blog.</subtitle>
   <link href="https://0x1eaf.dev/feed/feed.xml" rel="self" />
   <link href="https://0x1eaf.dev/" />
-  <updated>2025-01-17T16:53:07Z</updated>
+  <updated>2025-01-17T16:59:16Z</updated>
   <id>https://0x1eaf.dev/</id>
   <author>
     <name>0x1eaf/lucca</name>
   </author>
   <entry>
-    <title>OSSU 2024 In Review</title>
-    <link href="https://0x1eaf.dev/blog/ossu-2024-review/" />
-    <updated>2025-01-17T16:53:07Z</updated>
-    <id>https://0x1eaf.dev/blog/ossu-2024-review/</id>
-    <content type="html">&lt;p&gt;This year I started the &lt;a href=&quot;https://cs.ossu.dev/&quot;&gt;OSSU Computer Science curriculum&lt;/a&gt; (with modifications). Here&#39;s how that has gone as of the end of 2024:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;Nand2Tetris&lt;/strong&gt;: ✅ Completed, 2024-04-20&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Systematic Program Design&lt;/strong&gt;: ✅ Completed, 2024-09-21&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Discrete Mathematics by Epp, S.&lt;/strong&gt; ⏩ In-progress, chapter 8/12&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Introduction to Computer Systems&lt;/strong&gt; ⏩ In-progress, lecture 15/27, lab 4/7&lt;/li&gt;
-&lt;/ul&gt;
-&lt;h2 id=&quot;nand2tetris&quot;&gt;Nand2Tetris&lt;/h2&gt;
-&lt;p&gt;This course taught me that I can learn anything I want. It also taught me a bunch of cool things about computer architecture.&lt;/p&gt;
-&lt;p&gt;Nand2Tetris is a course that takes you all the way from basic digital logic circuits to computer that can (int theory) run tetris. Through a series of projects you get to specify all the hardware components of a whole computer (they give you a clock, a screen, and a keyboard for free), make an assembler, a two-stage compiler for a simple programming language, and an OS written in that language.&lt;/p&gt;
-&lt;p&gt;The course gives each of its subjects a surface-level treatment, focusing instead on how each subject relates to the other, For an introductory computer architecture course, I think that is perfect. You really get an intuition for &lt;em&gt;why&lt;/em&gt; things are the way they are, while at the same time giving you an opportunity to get a feel for a variety of subjects in Computer Science that you can then choose to make a deeper dive into.&lt;/p&gt;
-&lt;p&gt;It&#39;s also great for building intuition about how computers actually. Before this course, the low-level mechanics of how memory and CPU instructions work were pure magic, but afterwards I had all the tools I needed to reason about it. This was especially helpful for the first half of the Introduction to Computer Systems course (especially the machine programming parts), since most of it was just the specifics of how x86-64 implements concepts I already learned in N2T.&lt;/p&gt;
-&lt;h2 id=&quot;systematic-program-design&quot;&gt;Systematic Program Design&lt;/h2&gt;
-&lt;p&gt;This is a solid small-scale software design course. I mostly took this course to see what sort of programming practices they&#39;re teaching young programmers these days, and I&#39;m happy to report that the state of things is pretty good at this level at least. I&#39;m especially happy about the TDD-style approach to things, even though this course&#39;s variation of it is more of a top-down approach than what Kent Beck had in mind. I also think if you treat the design recipes as ways to reason about a problem, and the templates as drilling exercises to get you used to that kind of reasoning, you&#39;ll get a lot out of this course. You&#39;re not supposed be copy-pasting templates in your professional work, but doing it the first few times will help you establish those thought patterns.&lt;/p&gt;
-&lt;h2 id=&quot;discrete-mathematics&quot;&gt;Discrete Mathematics&lt;/h2&gt;
-&lt;p&gt;I think I&#39;ve learned how to enjoy math. I don&#39;t know if it&#39;s The Joy of Learning in general, or if there&#39;s something specific about math. I think part of it might be that I really enjoy exploring systems of logic, and what is mathematics if not that. So far in this book I&#39;ve explored propositional logic, number theory, sequences and induction, set theory, and relations and functions. I will admit one thing, however: number theory is not really my jam. I&#39;ve noticed that my progress slows down significantly the more number theory I&#39;m doing. Everything else is super cool though.&lt;/p&gt;
-&lt;h2 id=&quot;introduction-to-computer-systems&quot;&gt;Introduction to Computer Systems&lt;/h2&gt;
-&lt;p&gt;I&#39;m going to make a bold claim. Carnegie Mellon University consistently ranks among the best universities in the world for Computer Science, and this course is one of the major reasons why. It covers a lot of the same material as Nand2Tetris but in much greater detail, and in the context of real-world hardware and software. The best way I can describe this course is that it bridges the gap between hardware and operating system. Like Nand2Tetris, it is not a course that covers one singular subject, but rather a collection of subjects that all relate to and build on each other. So far I&#39;ve learned about binary data representation (I finally understand how floats work), x86-64 machine code, pipelining and optimization, the memory hierarchy, and a bit of OS stuff. Now, this is a difficult course. You cannot simply read the book and watch the lectures, and then go on your merry day, you will not learn a thing from that. You have to do the practice problems from the book, you have to do the labs, and sometimes, it takes a few tries to fully &lt;em&gt;get&lt;/em&gt; a concept (I had to do several passes on code optimization in order to fully get how to reason about data-dependencies and pipelined CPU-instructions), but once you &lt;em&gt;get it&lt;/em&gt;, it is so rewarding. One thing to note is, you &lt;em&gt;need&lt;/em&gt; the textbook, which is called Computer Systems: A Programmer&#39;s Perspective, you need the US-edition specifically, and there are no good versions online, in stores or on the seven seas. And the print version is $160. So keep that in mind.&lt;/p&gt;
-&lt;h2 id=&quot;lessons-learned&quot;&gt;Lessons Learned&lt;/h2&gt;
-&lt;p&gt;The most important thing I learned this year was how to structure myself
-and my own learning, and to be consistent with it. It&#39;s something I
-always struggled with.&lt;/p&gt;
-&lt;p&gt;Another thing is the need to pace myself. It&#39;s commonly said on the OSSU
-discord that &amp;quot;speedrunning always takes longer&amp;quot;. This is true in two
-ways:&lt;/p&gt;
-&lt;ol&gt;
-&lt;li&gt;Rushing things is a detriment to learning. When you feel like you&#39;re
-in a hurry, you tend to skip over things, not do problems, etc. and
-as a result you don&#39;t learn what&#39;s needed in order to proceed. The
-result is a need to go back and repeat things you were already
-supposed to have learned. Take your time.&lt;/li&gt;
-&lt;li&gt;Burnout. Something like OSSU is a multi-year project. It turns out,
-learning a bachelor&#39;s/master&#39;s degree worth of material is going to
-take about a bachelor&#39;s/master&#39;s degree amount of time. Pushing yourself and overworking yourself for that long is gonna bite you, it&#39;s gonna lead to burn you out, and it&#39;s gonna slow you down in the long run.
-I realized at some point, that I needed to &lt;em&gt;learn&lt;/em&gt; how to force
-myself to relax. That means finding an activity wholly unrelated to
-studies or work. Play videogames, hang out with friends, drink a cup
-of tea while watching a show. Just make sure you relax.&lt;/li&gt;
-&lt;/ol&gt;
-&lt;h2 id=&quot;whats-next&quot;&gt;What&#39;s Next?&lt;/h2&gt;
-&lt;p&gt;I try not to plan things too far. Usually the final decision on &amp;quot;what
-course/book/thing comes next&amp;quot; is made the moment i finish my current
-thing. With that being said, there&#39;s at least a few topics I want to
-explore in the new year.&lt;/p&gt;
-&lt;h3 id=&quot;algorithms&quot;&gt;Algorithms&lt;/h3&gt;
-&lt;p&gt;This is the natural next step after discrete mathematics. Part of why I
-started this whole thing was, that I wanted to become a better
-programmer, and the things I wanted to work on were the bare
-fundamentals. This is just that.&lt;/p&gt;
-&lt;p&gt;I&#39;ll be taking the theoretical approach for the simple reason that I&#39;m a
-nerd for theory. That means studying algorithms not as a subject of
-programming, but as a subject of math. Looking forward to it!&lt;/p&gt;
-&lt;h3 id=&quot;operating-systems&quot;&gt;Operating Systems&lt;/h3&gt;
-&lt;p&gt;Clearly I&#39;ve caught the systems programming bug. I just think it&#39;s neat.
-I&#39;ve got no idea if I&#39;ll ever get to work in systems programming
-professionally, but at the very least I find it fun right now.&lt;/p&gt;
-&lt;p&gt;The popular self-study course on this topic is OSTEP, and that&#39;s most
-likely the course I&#39;m going to follow. Free online textbooks are just
-too good to pass up on.&lt;/p&gt;
-</content>
-  </entry>
-  <entry>
     <title>we do a little data wrangling</title>
     <link href="https://0x1eaf.dev/blog/data-wrangling/" />
-    <updated>2025-01-17T16:53:07Z</updated>
+    <updated>2025-01-17T16:59:16Z</updated>
     <id>https://0x1eaf.dev/blog/data-wrangling/</id>
     <content type="html">&lt;p&gt;I wanted to do some rudimentary statistics on the Swedish tech job market, both to test a few hypotheses of mine, and also to get informed about what subject areas I want to focus on in terms of employability. It&#39;s no secret that I want a new job doing something else than what I&#39;m doing at my current job, so as much as I want to study for the sake of learning things that make me excited, I also need to stay cognizant of what job qualifications are in demand.&lt;/p&gt;
 &lt;p&gt;Luckily, the Swedish Employment publishes an open web API which gives access to all job adverts that they have ever hosted on their current platform. So let&#39;s get all job adverts that were posted since the beginning of 2024:&lt;/p&gt;
@@ -186,9 +120,75 @@ also highly sought after, which is expected.&lt;/p&gt;
 </content>
   </entry>
   <entry>
+    <title>OSSU 2024 In Review</title>
+    <link href="https://0x1eaf.dev/blog/ossu-2024-review/" />
+    <updated>2024-12-28T20:00:00Z</updated>
+    <id>https://0x1eaf.dev/blog/ossu-2024-review/</id>
+    <content type="html">&lt;p&gt;This year I started the &lt;a href=&quot;https://cs.ossu.dev/&quot;&gt;OSSU Computer Science curriculum&lt;/a&gt; (with modifications). Here&#39;s how that has gone as of the end of 2024:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Nand2Tetris&lt;/strong&gt;: ✅ Completed, 2024-04-20&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Systematic Program Design&lt;/strong&gt;: ✅ Completed, 2024-09-21&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Discrete Mathematics by Epp, S.&lt;/strong&gt; ⏩ In-progress, chapter 8/12&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Introduction to Computer Systems&lt;/strong&gt; ⏩ In-progress, lecture 15/27, lab 4/7&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;nand2tetris&quot;&gt;Nand2Tetris&lt;/h2&gt;
+&lt;p&gt;This course taught me that I can learn anything I want. It also taught me a bunch of cool things about computer architecture.&lt;/p&gt;
+&lt;p&gt;Nand2Tetris is a course that takes you all the way from basic digital logic circuits to computer that can (int theory) run tetris. Through a series of projects you get to specify all the hardware components of a whole computer (they give you a clock, a screen, and a keyboard for free), make an assembler, a two-stage compiler for a simple programming language, and an OS written in that language.&lt;/p&gt;
+&lt;p&gt;The course gives each of its subjects a surface-level treatment, focusing instead on how each subject relates to the other, For an introductory computer architecture course, I think that is perfect. You really get an intuition for &lt;em&gt;why&lt;/em&gt; things are the way they are, while at the same time giving you an opportunity to get a feel for a variety of subjects in Computer Science that you can then choose to make a deeper dive into.&lt;/p&gt;
+&lt;p&gt;It&#39;s also great for building intuition about how computers actually. Before this course, the low-level mechanics of how memory and CPU instructions work were pure magic, but afterwards I had all the tools I needed to reason about it. This was especially helpful for the first half of the Introduction to Computer Systems course (especially the machine programming parts), since most of it was just the specifics of how x86-64 implements concepts I already learned in N2T.&lt;/p&gt;
+&lt;h2 id=&quot;systematic-program-design&quot;&gt;Systematic Program Design&lt;/h2&gt;
+&lt;p&gt;This is a solid small-scale software design course. I mostly took this course to see what sort of programming practices they&#39;re teaching young programmers these days, and I&#39;m happy to report that the state of things is pretty good at this level at least. I&#39;m especially happy about the TDD-style approach to things, even though this course&#39;s variation of it is more of a top-down approach than what Kent Beck had in mind. I also think if you treat the design recipes as ways to reason about a problem, and the templates as drilling exercises to get you used to that kind of reasoning, you&#39;ll get a lot out of this course. You&#39;re not supposed be copy-pasting templates in your professional work, but doing it the first few times will help you establish those thought patterns.&lt;/p&gt;
+&lt;h2 id=&quot;discrete-mathematics&quot;&gt;Discrete Mathematics&lt;/h2&gt;
+&lt;p&gt;I think I&#39;ve learned how to enjoy math. I don&#39;t know if it&#39;s The Joy of Learning in general, or if there&#39;s something specific about math. I think part of it might be that I really enjoy exploring systems of logic, and what is mathematics if not that. So far in this book I&#39;ve explored propositional logic, number theory, sequences and induction, set theory, and relations and functions. I will admit one thing, however: number theory is not really my jam. I&#39;ve noticed that my progress slows down significantly the more number theory I&#39;m doing. Everything else is super cool though.&lt;/p&gt;
+&lt;h2 id=&quot;introduction-to-computer-systems&quot;&gt;Introduction to Computer Systems&lt;/h2&gt;
+&lt;p&gt;I&#39;m going to make a bold claim. Carnegie Mellon University consistently ranks among the best universities in the world for Computer Science, and this course is one of the major reasons why. It covers a lot of the same material as Nand2Tetris but in much greater detail, and in the context of real-world hardware and software. The best way I can describe this course is that it bridges the gap between hardware and operating system. Like Nand2Tetris, it is not a course that covers one singular subject, but rather a collection of subjects that all relate to and build on each other. So far I&#39;ve learned about binary data representation (I finally understand how floats work), x86-64 machine code, pipelining and optimization, the memory hierarchy, and a bit of OS stuff. Now, this is a difficult course. You cannot simply read the book and watch the lectures, and then go on your merry day, you will not learn a thing from that. You have to do the practice problems from the book, you have to do the labs, and sometimes, it takes a few tries to fully &lt;em&gt;get&lt;/em&gt; a concept (I had to do several passes on code optimization in order to fully get how to reason about data-dependencies and pipelined CPU-instructions), but once you &lt;em&gt;get it&lt;/em&gt;, it is so rewarding. One thing to note is, you &lt;em&gt;need&lt;/em&gt; the textbook, which is called Computer Systems: A Programmer&#39;s Perspective, you need the US-edition specifically, and there are no good versions online, in stores or on the seven seas. And the print version is $160. So keep that in mind.&lt;/p&gt;
+&lt;h2 id=&quot;lessons-learned&quot;&gt;Lessons Learned&lt;/h2&gt;
+&lt;p&gt;The most important thing I learned this year was how to structure myself
+and my own learning, and to be consistent with it. It&#39;s something I
+always struggled with.&lt;/p&gt;
+&lt;p&gt;Another thing is the need to pace myself. It&#39;s commonly said on the OSSU
+discord that &amp;quot;speedrunning always takes longer&amp;quot;. This is true in two
+ways:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Rushing things is a detriment to learning. When you feel like you&#39;re
+in a hurry, you tend to skip over things, not do problems, etc. and
+as a result you don&#39;t learn what&#39;s needed in order to proceed. The
+result is a need to go back and repeat things you were already
+supposed to have learned. Take your time.&lt;/li&gt;
+&lt;li&gt;Burnout. Something like OSSU is a multi-year project. It turns out,
+learning a bachelor&#39;s/master&#39;s degree worth of material is going to
+take about a bachelor&#39;s/master&#39;s degree amount of time. Pushing yourself and overworking yourself for that long is gonna bite you, it&#39;s gonna lead to burn you out, and it&#39;s gonna slow you down in the long run.
+I realized at some point, that I needed to &lt;em&gt;learn&lt;/em&gt; how to force
+myself to relax. That means finding an activity wholly unrelated to
+studies or work. Play videogames, hang out with friends, drink a cup
+of tea while watching a show. Just make sure you relax.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&quot;whats-next&quot;&gt;What&#39;s Next?&lt;/h2&gt;
+&lt;p&gt;I try not to plan things too far. Usually the final decision on &amp;quot;what
+course/book/thing comes next&amp;quot; is made the moment i finish my current
+thing. With that being said, there&#39;s at least a few topics I want to
+explore in the new year.&lt;/p&gt;
+&lt;h3 id=&quot;algorithms&quot;&gt;Algorithms&lt;/h3&gt;
+&lt;p&gt;This is the natural next step after discrete mathematics. Part of why I
+started this whole thing was, that I wanted to become a better
+programmer, and the things I wanted to work on were the bare
+fundamentals. This is just that.&lt;/p&gt;
+&lt;p&gt;I&#39;ll be taking the theoretical approach for the simple reason that I&#39;m a
+nerd for theory. That means studying algorithms not as a subject of
+programming, but as a subject of math. Looking forward to it!&lt;/p&gt;
+&lt;h3 id=&quot;operating-systems&quot;&gt;Operating Systems&lt;/h3&gt;
+&lt;p&gt;Clearly I&#39;ve caught the systems programming bug. I just think it&#39;s neat.
+I&#39;ve got no idea if I&#39;ll ever get to work in systems programming
+professionally, but at the very least I find it fun right now.&lt;/p&gt;
+&lt;p&gt;The popular self-study course on this topic is OSTEP, and that&#39;s most
+likely the course I&#39;m going to follow. Free online textbooks are just
+too good to pass up on.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
     <title>Code blocks</title>
     <link href="https://0x1eaf.dev/blog/code-block-test/" />
-    <updated>2025-01-17T16:53:07Z</updated>
+    <updated>2024-12-28T19:00:00Z</updated>
     <id>https://0x1eaf.dev/blog/code-block-test/</id>
     <content type="html">&lt;p&gt;In my quest to do as little web-development as possible when making this
 site, I decided to just fork this &lt;a href=&quot;https://github.com/11ty/eleventy-base-blog/&quot;&gt;base blog&lt;/a&gt; repo, and make
