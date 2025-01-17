@@ -5,7 +5,7 @@
   <subtitle>Personal site and blog.</subtitle>
   <link href="https://0x1eaf.dev/feed/feed.xml" rel="self" />
   <link href="https://0x1eaf.dev/" />
-  <updated>2024-12-29T17:51:08Z</updated>
+  <updated>2025-01-17T16:53:07Z</updated>
   <id>https://0x1eaf.dev/</id>
   <author>
     <name>0x1eaf/lucca</name>
@@ -13,7 +13,7 @@
   <entry>
     <title>OSSU 2024 In Review</title>
     <link href="https://0x1eaf.dev/blog/ossu-2024-review/" />
-    <updated>2024-12-29T17:51:08Z</updated>
+    <updated>2025-01-17T16:53:07Z</updated>
     <id>https://0x1eaf.dev/blog/ossu-2024-review/</id>
     <content type="html">&lt;p&gt;This year I started the &lt;a href=&quot;https://cs.ossu.dev/&quot;&gt;OSSU Computer Science curriculum&lt;/a&gt; (with modifications). Here&#39;s how that has gone as of the end of 2024:&lt;/p&gt;
 &lt;ul&gt;
@@ -77,9 +77,118 @@ too good to pass up on.&lt;/p&gt;
 </content>
   </entry>
   <entry>
+    <title>we do a little data wrangling</title>
+    <link href="https://0x1eaf.dev/blog/data-wrangling/" />
+    <updated>2025-01-17T16:53:07Z</updated>
+    <id>https://0x1eaf.dev/blog/data-wrangling/</id>
+    <content type="html">&lt;p&gt;I wanted to do some rudimentary statistics on the Swedish tech job market, both to test a few hypotheses of mine, and also to get informed about what subject areas I want to focus on in terms of employability. It&#39;s no secret that I want a new job doing something else than what I&#39;m doing at my current job, so as much as I want to study for the sake of learning things that make me excited, I also need to stay cognizant of what job qualifications are in demand.&lt;/p&gt;
+&lt;p&gt;Luckily, the Swedish Employment publishes an open web API which gives access to all job adverts that they have ever hosted on their current platform. So let&#39;s get all job adverts that were posted since the beginning of 2024:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ &lt;span class=&quot;token function&quot;&gt;curl&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-H&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Content-type: application/json&quot;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;&#92;&lt;/span&gt;
+&lt;span class=&quot;token string&quot;&gt;&#39;https://jobstream.api.jobtechdev.se/stream?date=2024-01-01T00:00:00&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;&gt;&lt;/span&gt; jobs.json
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+&lt;span class=&quot;token number&quot;&gt;100&lt;/span&gt;  682M    &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;  682M    &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;     &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;  4473k      &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt; --:--:--  &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;:02:36 --:--:-- 5017k
+❯&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Awesome.&lt;/p&gt;
+&lt;p&gt;Now, the Linux command line, it turns out, is an &lt;em&gt;excellent&lt;/em&gt; too for wrangling large datasets. Let&#39;s look at the tools we&#39;re gonna use:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;cat&lt;/strong&gt;: simply prints the contents of a file&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;jq&lt;/strong&gt;: format, filter, and transform JSON data.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;sed&lt;/strong&gt;: short for &amp;quot;stream-editor&amp;quot;. Can do various line-by-line transformations using RegEx. We&#39;re just gonna do simple search-replace with it.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;sort&lt;/strong&gt;: it sorts!&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;uniq&lt;/strong&gt;: prints and counts unique lines. Requires sorted data.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;grep&lt;/strong&gt;: extract data with RegEx!&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The data we get is an array of JSON objects. The fields we&#39;re interested in are &lt;code&gt;occupation_group&lt;/code&gt;, which denotes the job category, and &lt;code&gt;description&lt;/code&gt;, which contains the job description. The &lt;code&gt;occupation_group&lt;/code&gt;-field looks like this:&lt;/p&gt;
+&lt;pre class=&quot;language-json&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-json&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;&quot;concept_id&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; string&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;&quot;label&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; string&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;&quot;legacy_ams_taxonomy_id&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; int
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We&#39;re interested in the &lt;code&gt;concept_id&lt;/code&gt; for the label &amp;quot;Mjukvaru- och systemutvecklare m.fl.&amp;quot; (&amp;quot;Software- and system developers etc.&amp;quot;).&lt;/p&gt;
+&lt;p&gt;As a fun little exercise,  let&#39;s find the amount of job ads for each category:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ &lt;span class=&quot;token function&quot;&gt;cat&lt;/span&gt; jobs.json &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+jq &lt;span class=&quot;token string&quot;&gt;&#39;.[].occupation_group | select(.label != null) | .label&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;sort&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;uniq&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-c&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;sort&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-nr&lt;/span&gt;
+   &lt;span class=&quot;token number&quot;&gt;1879&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Mjukvaru- och systemutvecklare m.fl.&quot;&lt;/span&gt;
+   &lt;span class=&quot;token number&quot;&gt;1637&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Grundutbildade sjuksköterskor&quot;&lt;/span&gt;
+   &lt;span class=&quot;token number&quot;&gt;1628&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Personliga assistenter&quot;&lt;/span&gt;
+   &lt;span class=&quot;token number&quot;&gt;1392&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Företagssäljare&quot;&lt;/span&gt;
+    &lt;span class=&quot;token number&quot;&gt;920&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Undersköterskor, hemtjänst, hemsjukvård, äldreboende och habilitering&quot;&lt;/span&gt;
+    &lt;span class=&quot;token number&quot;&gt;915&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Motorfordonsmekaniker och fordonsreparatörer&quot;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;..&lt;/span&gt;.&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;So much for the recession in the tech industry, huh.&lt;/p&gt;
+&lt;p&gt;Enough of that, let&#39;s find that ID:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;&lt;span class=&quot;token function&quot;&gt;cat&lt;/span&gt; jobs.json &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+jq &lt;span class=&quot;token string&quot;&gt;&#39;.[].occupation_group | select(.label != null)&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;grep&lt;/span&gt; Mjukvaru &lt;span class=&quot;token parameter variable&quot;&gt;-B2&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-A2&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token string&quot;&gt;&quot;concept_id&quot;&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;DJh5_yyF_hEM&quot;&lt;/span&gt;,
+  &lt;span class=&quot;token string&quot;&gt;&quot;label&quot;&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Mjukvaru- och systemutvecklare m.fl.&quot;&lt;/span&gt;,
+  &lt;span class=&quot;token string&quot;&gt;&quot;legacy_ams_taxonomy_id&quot;&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;2512&quot;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+--
+&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token string&quot;&gt;&quot;concept_id&quot;&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;DJh5_yyF_hEM&quot;&lt;/span&gt;,
+  &lt;span class=&quot;token string&quot;&gt;&quot;label&quot;&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Mjukvaru- och systemutvecklare m.fl.&quot;&lt;/span&gt;,
+  &lt;span class=&quot;token string&quot;&gt;&quot;legacy_ams_taxonomy_id&quot;&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;2512&quot;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+--
+&lt;span class=&quot;token comment&quot;&gt;#...&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now we can use that ID to filter for software jobs only, and extracting the formatted text of the advert:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;jq &lt;span class=&quot;token string&quot;&gt;&#39;.[] | select(.occupation_group.concept_id == &quot;DJh5_yyF_hEM&quot;) | .description.text_formatted&#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Make it all lowercase for ease of processing keywords:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt; &lt;span class=&quot;token function&quot;&gt;tr&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;[:upper:]&#39;&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;[:lower:]&#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Remove HTML tags and newlines:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;&lt;span class=&quot;token function&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;s/&#92;&#92;n//g&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-E&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;s/&amp;lt;&#92;/?[a-z]{1,10}&gt;//g&#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Extract all the keywords I&#39;m interested in - programming languages and other qualifications. I use the -P flag to use Perl&#39;s RegEx engine, which enables lookahead and lookbehind qualifiers.&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;&lt;span class=&quot;token function&quot;&gt;grep&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-oP&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;&#92;(?&amp;lt;ǃ&#92;w)((c#)|(c)|(java)|(javascript)|(typescript)|(js)|(ts)|(python)|(linux)|(elixir)|(erlang)|(go)|(c&#92;+&#92;+)|(react)|(angular)|(svelte)|(&#92;.net)|(embedded)|(rust)|(scala)|(clojure)|(kotlin)|(ruby)|(swift)|(golang))(?=[ ,./])&#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Count the occurrence of each keyword&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;&lt;span class=&quot;token function&quot;&gt;sort&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;uniq&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-c&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;sort&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-nr&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Putting it all together&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ &lt;span class=&quot;token function&quot;&gt;cat&lt;/span&gt; jobs.json &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+jq &lt;span class=&quot;token string&quot;&gt;&#39;.[] | select(.occupation_group.concept_id == &quot;DJh5_yyF_hEM&quot;) | .description.text_formatted&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;tr&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;[:upper:]&#39;&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;[:lower:]&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;s/&#92;&#92;n//g&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-E&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;s/&amp;lt;&#92;/?[a-z]{1,10}&gt;//g&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;grep&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-oP&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;(?&amp;lt;!&#92;w)((c#)|(c)|(java)|(javascript)|(typescript)|(js)|(ts)|(python)|(linux)|(elixir)|(erlang)|(go)|(c&#92;+&#92;+)|(react)|(angular)|(svelte)|(&#92;.net)|(embedded)|(rust)|(scala)|(clojure)|(kotlin)|(ruby)|(swift)|(golang))(?=[ ,./])&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;sort&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;uniq&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-c&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;sort&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-nr&lt;/span&gt;
+    &lt;span class=&quot;token number&quot;&gt;583&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;java&lt;/span&gt;
+    &lt;span class=&quot;token number&quot;&gt;558&lt;/span&gt; python
+    &lt;span class=&quot;token number&quot;&gt;508&lt;/span&gt; .net
+    &lt;span class=&quot;token number&quot;&gt;487&lt;/span&gt; embedded
+    &lt;span class=&quot;token number&quot;&gt;434&lt;/span&gt; c++
+    &lt;span class=&quot;token number&quot;&gt;411&lt;/span&gt; c&lt;span class=&quot;token comment&quot;&gt;#&lt;/span&gt;
+    &lt;span class=&quot;token number&quot;&gt;339&lt;/span&gt; c
+    &lt;span class=&quot;token number&quot;&gt;327&lt;/span&gt; react
+    &lt;span class=&quot;token number&quot;&gt;311&lt;/span&gt; linux
+    &lt;span class=&quot;token number&quot;&gt;238&lt;/span&gt; javascript
+    &lt;span class=&quot;token number&quot;&gt;217&lt;/span&gt; typescript
+    &lt;span class=&quot;token number&quot;&gt;176&lt;/span&gt; js
+    &lt;span class=&quot;token number&quot;&gt;165&lt;/span&gt; angular
+    &lt;span class=&quot;token number&quot;&gt;107&lt;/span&gt; go
+    &lt;span class=&quot;token number&quot;&gt;104&lt;/span&gt; kotlin
+     &lt;span class=&quot;token number&quot;&gt;64&lt;/span&gt; ts
+     &lt;span class=&quot;token number&quot;&gt;40&lt;/span&gt; swift
+     &lt;span class=&quot;token number&quot;&gt;34&lt;/span&gt; rust
+     &lt;span class=&quot;token number&quot;&gt;34&lt;/span&gt; golang
+     &lt;span class=&quot;token number&quot;&gt;29&lt;/span&gt; scala
+     &lt;span class=&quot;token number&quot;&gt;13&lt;/span&gt; ruby
+      &lt;span class=&quot;token number&quot;&gt;4&lt;/span&gt; svelte
+      &lt;span class=&quot;token number&quot;&gt;4&lt;/span&gt; erlang
+      &lt;span class=&quot;token number&quot;&gt;2&lt;/span&gt; elixir
+      &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt; clojure&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Very interesting. I expected Java to be high, but I honestly thought
+C#/.NET would be higher. Same with the JS/TS + frameworks. Python is
+also highly sought after, which is expected.&lt;/p&gt;
+&lt;p&gt;Now, Go also happens to be a common English word, and given that many of these ads are written in English, the likelyhood of Go being overcounted is very high. I&#39;m surprised to see it rank so low, regardless.&lt;/p&gt;
+&lt;p&gt;What I&#39;m most interested in is the amount of listings that contain the word &amp;quot;embedded&amp;quot;. As mentioned in &lt;a href=&quot;https://0x1eaf.dev/blog/ossu-2024-review/&quot;&gt;a previous blog post&lt;/a&gt;, I&#39;ve gotten quite fond of systems level programming. With the understanding that I&#39;d need to learn some rudimentary electrical engineering, maybe I should take a shot at becoming an embedded developer. It sounds fun, not gonna lie.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
     <title>Code blocks</title>
     <link href="https://0x1eaf.dev/blog/code-block-test/" />
-    <updated>2024-12-29T17:51:08Z</updated>
+    <updated>2025-01-17T16:53:07Z</updated>
     <id>https://0x1eaf.dev/blog/code-block-test/</id>
     <content type="html">&lt;p&gt;In my quest to do as little web-development as possible when making this
 site, I decided to just fork this &lt;a href=&quot;https://github.com/11ty/eleventy-base-blog/&quot;&gt;base blog&lt;/a&gt; repo, and make
