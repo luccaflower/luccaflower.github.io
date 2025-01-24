@@ -12,6 +12,9 @@ development of legacy systems. Skilled at exploring complex software
 systems, quick to isolate and fix errors, disciplined when developing
 new features.
 
+**Contact**: mail@0x1eaf.dev
+**Location**: Uppsala, Sweden
+
 # Experience
 - **System Developer at Mahjong Logic** (Feb. 2022 - present)
 	- Java 11/17/21
