@@ -5,7 +5,7 @@
   <subtitle>Personal site and blog.</subtitle>
   <link href="https://0x1eaf.dev/feed/feed.xml" rel="self" />
   <link href="https://0x1eaf.dev/" />
-  <updated>2025-01-17T16:59:16Z</updated>
+  <updated>2025-01-24T12:07:36Z</updated>
   <id>https://0x1eaf.dev/</id>
   <author>
     <name>0x1eaf/lucca</name>
@@ -13,7 +13,7 @@
   <entry>
     <title>we do a little data wrangling</title>
     <link href="https://0x1eaf.dev/blog/data-wrangling/" />
-    <updated>2025-01-17T16:59:16Z</updated>
+    <updated>2025-01-24T12:07:36Z</updated>
     <id>https://0x1eaf.dev/blog/data-wrangling/</id>
     <content type="html">&lt;p&gt;I wanted to do some rudimentary statistics on the Swedish tech job market, both to test a few hypotheses of mine, and also to get informed about what subject areas I want to focus on in terms of employability. It&#39;s no secret that I want a new job doing something else than what I&#39;m doing at my current job, so as much as I want to study for the sake of learning things that make me excited, I also need to stay cognizant of what job qualifications are in demand.&lt;/p&gt;
 &lt;p&gt;Luckily, the Swedish Employment publishes an open web API which gives access to all job adverts that they have ever hosted on their current platform. So let&#39;s get all job adverts that were posted since the beginning of 2024:&lt;/p&gt;
