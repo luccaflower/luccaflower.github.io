@@ -18,36 +18,41 @@
 	
 	<url>
 		<loc>https://0x1eaf.dev/blog/data-wrangling/</loc>
-		<lastmod>2025-01-24</lastmod>
+		<lastmod>2025-02-01</lastmod>
 	</url>
 	
 	<url>
 		<loc>https://0x1eaf.dev/blog/</loc>
-		<lastmod>2025-01-24</lastmod>
+		<lastmod>2025-02-01</lastmod>
 	</url>
 	
 	<url>
 		<loc>https://0x1eaf.dev/cv/</loc>
-		<lastmod>2025-01-24</lastmod>
+		<lastmod>2025-02-01</lastmod>
 	</url>
 	
 	<url>
 		<loc>https://0x1eaf.dev/</loc>
-		<lastmod>2025-01-24</lastmod>
+		<lastmod>2025-02-01</lastmod>
 	</url>
 	
 	<url>
 		<loc>https://0x1eaf.dev/ossu/progress/</loc>
-		<lastmod>2025-01-24</lastmod>
+		<lastmod>2025-02-01</lastmod>
 	</url>
 	
 	<url>
 		<loc>https://0x1eaf.dev/tags/</loc>
-		<lastmod>2025-01-24</lastmod>
+		<lastmod>2025-02-01</lastmod>
 	</url>
 	
 	<url>
 		<loc>https://0x1eaf.dev/feed/feed.xml</loc>
-		<lastmod>2025-01-24</lastmod>
+		<lastmod>2025-02-01</lastmod>
+	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/blog/malloc/</loc>
+		<lastmod>2025-02-01</lastmod>
 	</url>
 </urlset>
