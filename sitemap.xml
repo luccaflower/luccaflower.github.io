@@ -22,6 +22,11 @@
 	</url>
 	
 	<url>
+		<loc>https://0x1eaf.dev/blog/malloc/</loc>
+		<lastmod>2025-02-01</lastmod>
+	</url>
+	
+	<url>
 		<loc>https://0x1eaf.dev/blog/</loc>
 		<lastmod>2025-02-01</lastmod>
 	</url>
@@ -48,11 +53,6 @@
 	
 	<url>
 		<loc>https://0x1eaf.dev/feed/feed.xml</loc>
-		<lastmod>2025-02-01</lastmod>
-	</url>
-	
-	<url>
-		<loc>https://0x1eaf.dev/blog/malloc/</loc>
 		<lastmod>2025-02-01</lastmod>
 	</url>
 </urlset>

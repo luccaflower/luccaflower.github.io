@@ -22,7 +22,7 @@
 &lt;li&gt;To allocate very large blocks of memory&lt;/li&gt;
 &lt;li&gt;To allocate memory whose lifetime needs to be longer than the scope of the function that allocates it.&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;A general-purpose allocator like mallow really has the following main requirements, many of which are in conflict with each other:&lt;/p&gt;
+&lt;p&gt;A general-purpose allocator like malloc really has the following main requirements, many of which are in conflict with each other:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;Allocation must be very fast.&lt;/li&gt;
 &lt;li&gt;The allocator must utilize memory efficiently. This means reducing fragmentation and overhead.&lt;/li&gt;
