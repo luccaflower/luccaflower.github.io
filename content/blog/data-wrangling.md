@@ -1,7 +1,7 @@
 ---
 title: "we do a little data wrangling"
 description: "The linux command line is quite powerful!"
-date: git Last Modified
+date: 2025-01-17T16:53:07Z
 tags:
   - journal
   - jobs
