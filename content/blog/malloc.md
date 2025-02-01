@@ -14,7 +14,7 @@ A dynamic memory allocator is primarily used for three things:
 *  To allocate very large blocks of memory
 *  To allocate memory whose lifetime needs to be longer than the scope of the function that allocates it.
 
-A general-purpose allocator like mallow really has the following main requirements, many of which are in conflict with each other:
+A general-purpose allocator like malloc really has the following main requirements, many of which are in conflict with each other:
 * Allocation must be very fast.
 * The allocator must utilize memory efficiently. This means reducing fragmentation and overhead.
 * Memory must be contiguous. If an application asks for a block of a certain size, then that block must be a single block of memory. It cannot be split up.
