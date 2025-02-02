@@ -363,7 +363,6 @@ static void *extend_heap(size_t size) {
      put(header(bp), pack(size, 0));
      put(footer(bp), pack(size, 0));
      put(header(next_block_pointer(bp)), pack(0, 1));
-+    set_prev_alloc(next_block_pointer(bp), 0);
 +    bp = coalesce(bp);
 +    insert_node((free_node_t *)bp);
 -    return coalesce(bp);
