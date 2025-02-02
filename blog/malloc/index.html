@@ -816,8 +816,7 @@ so I won't bore you with the details.</li>
 <span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    put(header(bp), pack(size, 0));
 </span><span class="token prefix unchanged"> </span><span class="token line">    put(footer(bp), pack(size, 0));
 </span><span class="token prefix unchanged"> </span><span class="token line">    put(header(next_block_pointer(bp)), pack(0, 1));
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    set_prev_alloc(next_block_pointer(bp), 0);
-</span><span class="token prefix inserted">+</span><span class="token line">    bp = coalesce(bp);
+</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    bp = coalesce(bp);
 </span><span class="token prefix inserted">+</span><span class="token line">    insert_node((free_node_t *)bp);
 </span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    return coalesce(bp);
 </span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    return bp;
@@ -1119,7 +1118,7 @@ Perf index = 47 (util) + 40 (thru) = 87/100
 			</heading-anchors>
 		</main>
 
-		<!-- This page `/blog/malloc/` was built on 2025-02-01T21:05:30.096Z -->
+		<!-- This page `/blog/malloc/` was built on 2025-02-02T07:15:12.592Z -->
 		<script type="module" src="/dist/PQuipxb2GV.js"></script>
 	</body>
 </html>
