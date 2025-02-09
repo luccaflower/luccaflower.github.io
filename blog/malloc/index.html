@@ -227,7 +227,6 @@ pre[class*="language-diff-"] {
 	--syntax-tab-size: 2;
 }
 
-
 /* Global stylesheet */
 * {
 	box-sizing: border-box;
@@ -360,6 +359,7 @@ pre:not([class*="language-"]) {
 }
 code {
 	word-break: break-all;
+  background-color: #3c3836;
 }
 
 /* Header */
@@ -524,8 +524,8 @@ header {
 <ul>
 <li><code>mm_init</code>: Initialize the memory allocator. Return 0 on success, and -1 on failure.</li>
 <li><code>mm_malloc</code>: Return a pointer to a memory block that is at least <code>size</code> big, or <code>NULL</code> if the request fails. <code>size</code> cannot be 0.</li>
-<li><code>mm_free</code>: Deallocate the block of memory starting at the address of <code>ptr</code>. <code>ptr</code>must be the starting address of an allocated block of memory.</li>
-<li><code>mm_realloc</code>: Return a pointer to a block of memory that is at least <code>new_size</code> big. The data at the returned pointer must be identical to the data at <code>ptr</code> up to the <code>new_size</code>th byte.</li>
+<li><code>mm_free</code>: Deallocate the block of memory starting at the address of <code>ptr</code>. <code>ptr</code> must be the starting address of an allocated block of memory.</li>
+<li><code>mm_realloc</code>: Return a pointer to a block of memory that is at least <code>new_size</code> big. The data at the returned pointer must be identical to the data at <code>ptr</code> up to the <code>new_size</code>'th byte.</li>
 </ul>
 <p>To support our implementation, we're given the <code>mem_sbrk</code> function as an analogue to <code>sbrk</code>. This function simply increases the heap by the requested size, and returns the base address of the new area. This way, the autograder that is included in the lab can keep track of where memory is allocated on the heap, and inspect it for measuring the correctness and performance of the allocator.</p>
 <h2 id="how-is-this-thing-scored">How is this thing scored</h2>
@@ -760,7 +760,7 @@ On the surface, this looks like a simple trade-off between throughput and utiliz
 <span class="token punctuation">}</span></code></pre>
 <p>This implementation simply makes a call to <code>malloc</code> for a block of the new size, uses <code>memcpy</code> to copy the data of the old block over to the new block, and frees the old block.</p>
 <p>With that, we have a fully functional memory allocator. Let's see how it performs.</p>
-<pre><code>Results for mm malloc:
+<pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
 trace  valid  util     ops      secs  Kops/sec
  0       yes   99%    5694  0.003271  1741
  1       yes   98%    5848  0.003519  1662
@@ -775,8 +775,7 @@ trace  valid  util     ops      secs  Kops/sec
 10       yes   23%   14401  0.000938 15348
 Total          68%  112372  0.227729   493
 
-Perf index = 41 (util) + 1 (thru) = 41/100
-</code></pre>
+Perf index = 41 (util) + 1 (thru) = 41/100</code></pre>
 <p>While memory utilization isn't disastrous, the throughput here is <em>abysmal</em>, coming in at around ~1.5% of the throughput of libc malloc. So why is that?</p>
 <p>Freeing is obviously very fast, both the free and coalesce operations are constant-time involving only addition and bit-flipping.</p>
 <p>Allocation on the other hand involves a linear search, not just of the free list (there is no free-list to be quite honest), but of the entire implicit list of every block of memory known to the allocator. Not only is this slow by default, but it will get slower and slower as the heap grows.</p>
@@ -924,7 +923,7 @@ so I won't bore you with the details.</li>
 <p>In reality, I didn't actually do it like that. I made many ill-considered changes that left me with a hard-to-debug broken allocator, and I ran <code>git restore mm.c</code> at least a few times. So let that be a lesson: keep it working.</p>
 <p>With the explicit free-list done, let's run the autograder and measure our performance:
 <strong>LIFO</strong>:</p>
-<pre><code>Results for mm malloc:
+<pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
 trace  valid  util     ops      secs  Kops/sec
  0       yes   89%    5694  0.000093 61160
  1       yes   91%    5848  0.000058100309
@@ -939,10 +938,9 @@ trace  valid  util     ops      secs  Kops/sec
 10       yes   30%   14401  0.001027 14020
 Total          71%  112372  0.030070  3737
 
-Perf index = 42 (util) + 5 (thru) = 47/100
-</code></pre>
+Perf index = 42 (util) + 5 (thru) = 47/100</code></pre>
 <p><strong>FIFO</strong>:</p>
-<pre><code>Results for mm malloc:
+<pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
 trace  valid  util     ops      secs  Kops/sec
  0       yes   98%    5694  0.000062 92435
  1       yes   96%    5848  0.000065 90667
@@ -957,8 +955,7 @@ trace  valid  util     ops      secs  Kops/sec
 10       yes   30%   14401  0.001033 13945
 Total          73%  112372  0.071427  1573
 
-Perf index = 44 (util) + 2 (thru) = 46/100
-</code></pre>
+Perf index = 44 (util) + 2 (thru) = 46/100</code></pre>
 <p>Now, while the dramatic difference between the two is somewhat surprising (the fact that the slowest traces are the ones that do the most calls to realloc might be part of the story here), I am not at all surpised that the LIFO version comes out ahead, and the reason for that is locality.</p>
 <p>Locality is simply the idea that memory that has been accessed once, will most likely be accessed again, and when one block of memory gets accessed, its neighboring blocks will most likely be accessed too. Thus, code that exhibits high locality, will access the same memory frequently, and access contiguous blocks of memory in sequence. This has performance implications due the way the CPU cache works. Simply put code with good locality will have fewer cache misses, resulting in faster memory access.</p>
 <p>Arguably, blocks of memory that have been <em>freed</em> more recently, are also more likely to have been <em>used</em> more recently. As a result, they then more likely to be present in lower (faster) levels of cache memory. Given that LIFO allocates the most recently freed blocks, and FIFO allocates the least recently freed blocks, it would come as a surprise, if LIFO interacts better with the CPU caches and is faster as a result.</p>
@@ -967,7 +964,7 @@ Perf index = 44 (util) + 2 (thru) = 46/100
 <p>Unfortunately there's a fundamental problem with treating this as a portable, general-purpose allocator, and that is that the header data has been encoded in an <code>unsigned int</code>, which is a 32-bit value on x86 and x64. This is an artifact from following the textbook-implementation from earlier. While this would be totally ok if we restrict ourselves to making an allocator for a 32-bit system, it feels a bit like cheating, because it allows us to pack the headers more closely.</p>
 <p>For the autograder, this is no problem, because the autograder's heap is limited to 20MB, a size that fits well within a 32-bit unsigned integer, and thus it has not caused any problems so far. However, this is supposed to be a general-purpose allocator, and it's honestly an interesting exercise to make it work the same on both 32-bit and 64-bit architectures.</p>
 <p><code>size_t</code> is an unsigned integer data type in C used to represent the size of an object. Since an object, in theory, could be as large as the entire virtual address space, <code>size_t</code> needs to be able to accommodate a size that is at least as large (at least, I assume this to be the case, I haven't actually looked that up). As such, <code>size_t</code> is 4 bytes on x86, and 8 bytes on x64. From this point onward, block metadata is represented using a <code>size_t</code> instead of an <code>unsigned int</code>.</p>
-<pre><code>Results for mm malloc:
+<pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
 trace  valid  util     ops      secs  Kops
  0       yes   89%    5694  0.000114 49904
  1       yes   92%    5848  0.000070 83782
@@ -982,8 +979,7 @@ trace  valid  util     ops      secs  Kops
 10       yes   38%   14401  0.000971 14831
 Total          70%  112372  0.032995  3406
 
-Perf index = 42 (util) + 5 (thru) = 47/100
-</code></pre>
+Perf index = 42 (util) + 5 (thru) = 47/100</code></pre>
 <p>Only a minor performance hit.</p>
 <p>A small optimization that was done in conjunction with this change was removing the footer from allocated blocks, and encoding whether the previous block was allocated in a bit-field in the header. The advantage of doing this is arguably pretty small.</p>
 <h2 id="third-iteration-segregated-free-list">Third iteration: segregated free-list</h2>
@@ -1019,7 +1015,7 @@ correct free-list like before.</p>
 </span></span></code></pre>
 <p>(yes, the outer loop could have been a for-loop too)</p>
 <p>And that's all there is to it. Let's see how it compares.</p>
-<pre><code>Results for mm malloc:
+<pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
 trace  valid  util     ops      secs  Kops
  0       yes   98%    5694  0.000098 57925
  1       yes   97%    5848  0.000111 52590
@@ -1034,8 +1030,7 @@ trace  valid  util     ops      secs  Kops
 10       yes   16%   14401  0.001766  8156
 Total          71%  112372  0.029926  3755
 
-Perf index = 43 (util) + 5 (thru) = 48/100
-</code></pre>
+Perf index = 43 (util) + 5 (thru) = 48/100</code></pre>
 <p>At a glance, that looks like a pretty minor improvement, but look at trace 9. What's going on with that?</p>
 <h2 id="a-second-look-at-realloc">A second look at <code>realloc</code></h2>
 <p>Well, trace 9 is called <code>realloc-bal.rep</code> which should give you a hint. Recall that we haven't touched <code>mm_realloc</code> <em>at all</em> so far, and it is a guaranteed call to <code>memcpy</code>, which certainly <em>sounds</em> expensive. So let's try to optimize that.</p>
@@ -1082,7 +1077,7 @@ Perf index = 43 (util) + 5 (thru) = 48/100
 </span><span class="token prefix unchanged"> </span><span class="token line">}
 </span></span></code></pre>
 <p>Let's see how that performs.</p>
-<pre><code>Results for mm malloc:
+<pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
 trace  valid  util     ops      secs  Kops
  0       yes   98%    5694  0.000121 47136
  1       yes   97%    5848  0.000123 47622
@@ -1097,8 +1092,7 @@ trace  valid  util     ops      secs  Kops
 10       yes   66%   14401  0.000123117463
 Total          78%  112372  0.001889 59500
 
-Perf index = 47 (util) + 40 (thru) = 87/100
-</code></pre>
+Perf index = 47 (util) + 40 (thru) = 87/100</code></pre>
 <p>Ok then. I appear to have made a malloc that is twice as fast as libc-malloc.</p>
 <p>But that's not really a fair comparison. For one, this implementation is evaluated against a small set of mostly synthetic allocation patterns, which is not necessarily representative of the kinds of allocation patterns a real-world allocator would have to face.</p>
 <p>Secondly, my allocator is not thread-safe. If a multi-threaded program were to use my allocator from concurrent threads, disastrous things would likely happen.</p>
@@ -1118,7 +1112,7 @@ Perf index = 47 (util) + 40 (thru) = 87/100
 			</heading-anchors>
 		</main>
 
-		<!-- This page `/blog/malloc/` was built on 2025-02-02T07:15:12.592Z -->
-		<script type="module" src="/dist/PQuipxb2GV.js"></script>
+		<!-- This page `/blog/malloc/` was built on 2025-02-09T15:20:22.367Z -->
+		<script type="module" src="/dist/xbxy_EL6cU.js"></script>
 	</body>
 </html>

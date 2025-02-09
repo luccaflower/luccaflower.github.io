@@ -43,8 +43,8 @@
 &lt;ul&gt;
 &lt;li&gt;&lt;code&gt;mm_init&lt;/code&gt;: Initialize the memory allocator. Return 0 on success, and -1 on failure.&lt;/li&gt;
 &lt;li&gt;&lt;code&gt;mm_malloc&lt;/code&gt;: Return a pointer to a memory block that is at least &lt;code&gt;size&lt;/code&gt; big, or &lt;code&gt;NULL&lt;/code&gt; if the request fails. &lt;code&gt;size&lt;/code&gt; cannot be 0.&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;mm_free&lt;/code&gt;: Deallocate the block of memory starting at the address of &lt;code&gt;ptr&lt;/code&gt;. &lt;code&gt;ptr&lt;/code&gt;must be the starting address of an allocated block of memory.&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;mm_realloc&lt;/code&gt;: Return a pointer to a block of memory that is at least &lt;code&gt;new_size&lt;/code&gt; big. The data at the returned pointer must be identical to the data at &lt;code&gt;ptr&lt;/code&gt; up to the &lt;code&gt;new_size&lt;/code&gt;th byte.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;mm_free&lt;/code&gt;: Deallocate the block of memory starting at the address of &lt;code&gt;ptr&lt;/code&gt;. &lt;code&gt;ptr&lt;/code&gt; must be the starting address of an allocated block of memory.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;mm_realloc&lt;/code&gt;: Return a pointer to a block of memory that is at least &lt;code&gt;new_size&lt;/code&gt; big. The data at the returned pointer must be identical to the data at &lt;code&gt;ptr&lt;/code&gt; up to the &lt;code&gt;new_size&lt;/code&gt;&#39;th byte.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;To support our implementation, we&#39;re given the &lt;code&gt;mem_sbrk&lt;/code&gt; function as an analogue to &lt;code&gt;sbrk&lt;/code&gt;. This function simply increases the heap by the requested size, and returns the base address of the new area. This way, the autograder that is included in the lab can keep track of where memory is allocated on the heap, and inspect it for measuring the correctness and performance of the allocator.&lt;/p&gt;
 &lt;h2 id=&quot;how-is-this-thing-scored&quot;&gt;How is this thing scored&lt;/h2&gt;
@@ -279,7 +279,7 @@ On the surface, this looks like a simple trade-off between throughput and utiliz
 &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;This implementation simply makes a call to &lt;code&gt;malloc&lt;/code&gt; for a block of the new size, uses &lt;code&gt;memcpy&lt;/code&gt; to copy the data of the old block over to the new block, and frees the old block.&lt;/p&gt;
 &lt;p&gt;With that, we have a fully functional memory allocator. Let&#39;s see how it performs.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Results for mm malloc:
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
 trace  valid  util     ops      secs  Kops/sec
  0       yes   99%    5694  0.003271  1741
  1       yes   98%    5848  0.003519  1662
@@ -294,8 +294,7 @@ trace  valid  util     ops      secs  Kops/sec
 10       yes   23%   14401  0.000938 15348
 Total          68%  112372  0.227729   493
 
-Perf index = 41 (util) + 1 (thru) = 41/100
-&lt;/code&gt;&lt;/pre&gt;
+Perf index = 41 (util) + 1 (thru) = 41/100&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;While memory utilization isn&#39;t disastrous, the throughput here is &lt;em&gt;abysmal&lt;/em&gt;, coming in at around ~1.5% of the throughput of libc malloc. So why is that?&lt;/p&gt;
 &lt;p&gt;Freeing is obviously very fast, both the free and coalesce operations are constant-time involving only addition and bit-flipping.&lt;/p&gt;
 &lt;p&gt;Allocation on the other hand involves a linear search, not just of the free list (there is no free-list to be quite honest), but of the entire implicit list of every block of memory known to the allocator. Not only is this slow by default, but it will get slower and slower as the heap grows.&lt;/p&gt;
@@ -443,7 +442,7 @@ so I won&#39;t bore you with the details.&lt;/li&gt;
 &lt;p&gt;In reality, I didn&#39;t actually do it like that. I made many ill-considered changes that left me with a hard-to-debug broken allocator, and I ran &lt;code&gt;git restore mm.c&lt;/code&gt; at least a few times. So let that be a lesson: keep it working.&lt;/p&gt;
 &lt;p&gt;With the explicit free-list done, let&#39;s run the autograder and measure our performance:
 &lt;strong&gt;LIFO&lt;/strong&gt;:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Results for mm malloc:
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
 trace  valid  util     ops      secs  Kops/sec
  0       yes   89%    5694  0.000093 61160
  1       yes   91%    5848  0.000058100309
@@ -458,10 +457,9 @@ trace  valid  util     ops      secs  Kops/sec
 10       yes   30%   14401  0.001027 14020
 Total          71%  112372  0.030070  3737
 
-Perf index = 42 (util) + 5 (thru) = 47/100
-&lt;/code&gt;&lt;/pre&gt;
+Perf index = 42 (util) + 5 (thru) = 47/100&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;&lt;strong&gt;FIFO&lt;/strong&gt;:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Results for mm malloc:
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
 trace  valid  util     ops      secs  Kops/sec
  0       yes   98%    5694  0.000062 92435
  1       yes   96%    5848  0.000065 90667
@@ -476,8 +474,7 @@ trace  valid  util     ops      secs  Kops/sec
 10       yes   30%   14401  0.001033 13945
 Total          73%  112372  0.071427  1573
 
-Perf index = 44 (util) + 2 (thru) = 46/100
-&lt;/code&gt;&lt;/pre&gt;
+Perf index = 44 (util) + 2 (thru) = 46/100&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Now, while the dramatic difference between the two is somewhat surprising (the fact that the slowest traces are the ones that do the most calls to realloc might be part of the story here), I am not at all surpised that the LIFO version comes out ahead, and the reason for that is locality.&lt;/p&gt;
 &lt;p&gt;Locality is simply the idea that memory that has been accessed once, will most likely be accessed again, and when one block of memory gets accessed, its neighboring blocks will most likely be accessed too. Thus, code that exhibits high locality, will access the same memory frequently, and access contiguous blocks of memory in sequence. This has performance implications due the way the CPU cache works. Simply put code with good locality will have fewer cache misses, resulting in faster memory access.&lt;/p&gt;
 &lt;p&gt;Arguably, blocks of memory that have been &lt;em&gt;freed&lt;/em&gt; more recently, are also more likely to have been &lt;em&gt;used&lt;/em&gt; more recently. As a result, they then more likely to be present in lower (faster) levels of cache memory. Given that LIFO allocates the most recently freed blocks, and FIFO allocates the least recently freed blocks, it would come as a surprise, if LIFO interacts better with the CPU caches and is faster as a result.&lt;/p&gt;
@@ -486,7 +483,7 @@ Perf index = 44 (util) + 2 (thru) = 46/100
 &lt;p&gt;Unfortunately there&#39;s a fundamental problem with treating this as a portable, general-purpose allocator, and that is that the header data has been encoded in an &lt;code&gt;unsigned int&lt;/code&gt;, which is a 32-bit value on x86 and x64. This is an artifact from following the textbook-implementation from earlier. While this would be totally ok if we restrict ourselves to making an allocator for a 32-bit system, it feels a bit like cheating, because it allows us to pack the headers more closely.&lt;/p&gt;
 &lt;p&gt;For the autograder, this is no problem, because the autograder&#39;s heap is limited to 20MB, a size that fits well within a 32-bit unsigned integer, and thus it has not caused any problems so far. However, this is supposed to be a general-purpose allocator, and it&#39;s honestly an interesting exercise to make it work the same on both 32-bit and 64-bit architectures.&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;size_t&lt;/code&gt; is an unsigned integer data type in C used to represent the size of an object. Since an object, in theory, could be as large as the entire virtual address space, &lt;code&gt;size_t&lt;/code&gt; needs to be able to accommodate a size that is at least as large (at least, I assume this to be the case, I haven&#39;t actually looked that up). As such, &lt;code&gt;size_t&lt;/code&gt; is 4 bytes on x86, and 8 bytes on x64. From this point onward, block metadata is represented using a &lt;code&gt;size_t&lt;/code&gt; instead of an &lt;code&gt;unsigned int&lt;/code&gt;.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Results for mm malloc:
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
 trace  valid  util     ops      secs  Kops
  0       yes   89%    5694  0.000114 49904
  1       yes   92%    5848  0.000070 83782
@@ -501,8 +498,7 @@ trace  valid  util     ops      secs  Kops
 10       yes   38%   14401  0.000971 14831
 Total          70%  112372  0.032995  3406
 
-Perf index = 42 (util) + 5 (thru) = 47/100
-&lt;/code&gt;&lt;/pre&gt;
+Perf index = 42 (util) + 5 (thru) = 47/100&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Only a minor performance hit.&lt;/p&gt;
 &lt;p&gt;A small optimization that was done in conjunction with this change was removing the footer from allocated blocks, and encoding whether the previous block was allocated in a bit-field in the header. The advantage of doing this is arguably pretty small.&lt;/p&gt;
 &lt;h2 id=&quot;third-iteration-segregated-free-list&quot;&gt;Third iteration: segregated free-list&lt;/h2&gt;
@@ -538,7 +534,7 @@ correct free-list like before.&lt;/p&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;(yes, the outer loop could have been a for-loop too)&lt;/p&gt;
 &lt;p&gt;And that&#39;s all there is to it. Let&#39;s see how it compares.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Results for mm malloc:
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
 trace  valid  util     ops      secs  Kops
  0       yes   98%    5694  0.000098 57925
  1       yes   97%    5848  0.000111 52590
@@ -553,8 +549,7 @@ trace  valid  util     ops      secs  Kops
 10       yes   16%   14401  0.001766  8156
 Total          71%  112372  0.029926  3755
 
-Perf index = 43 (util) + 5 (thru) = 48/100
-&lt;/code&gt;&lt;/pre&gt;
+Perf index = 43 (util) + 5 (thru) = 48/100&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;At a glance, that looks like a pretty minor improvement, but look at trace 9. What&#39;s going on with that?&lt;/p&gt;
 &lt;h2 id=&quot;a-second-look-at-realloc&quot;&gt;A second look at &lt;code&gt;realloc&lt;/code&gt;&lt;/h2&gt;
 &lt;p&gt;Well, trace 9 is called &lt;code&gt;realloc-bal.rep&lt;/code&gt; which should give you a hint. Recall that we haven&#39;t touched &lt;code&gt;mm_realloc&lt;/code&gt; &lt;em&gt;at all&lt;/em&gt; so far, and it is a guaranteed call to &lt;code&gt;memcpy&lt;/code&gt;, which certainly &lt;em&gt;sounds&lt;/em&gt; expensive. So let&#39;s try to optimize that.&lt;/p&gt;
@@ -601,7 +596,7 @@ Perf index = 43 (util) + 5 (thru) = 48/100
 &lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;}
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Let&#39;s see how that performs.&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Results for mm malloc:
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
 trace  valid  util     ops      secs  Kops
  0       yes   98%    5694  0.000121 47136
  1       yes   97%    5848  0.000123 47622
@@ -616,8 +611,7 @@ trace  valid  util     ops      secs  Kops
 10       yes   66%   14401  0.000123117463
 Total          78%  112372  0.001889 59500
 
-Perf index = 47 (util) + 40 (thru) = 87/100
-&lt;/code&gt;&lt;/pre&gt;
+Perf index = 47 (util) + 40 (thru) = 87/100&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Ok then. I appear to have made a malloc that is twice as fast as libc-malloc.&lt;/p&gt;
 &lt;p&gt;But that&#39;s not really a fair comparison. For one, this implementation is evaluated against a small set of mostly synthetic allocation patterns, which is not necessarily representative of the kinds of allocation patterns a real-world allocator would have to face.&lt;/p&gt;
 &lt;p&gt;Secondly, my allocator is not thread-safe. If a multi-threaded program were to use my allocator from concurrent threads, disastrous things would likely happen.&lt;/p&gt;
