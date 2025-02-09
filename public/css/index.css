@@ -20,7 +20,6 @@
 	--syntax-tab-size: 2;
 }
 
-
 /* Global stylesheet */
 * {
 	box-sizing: border-box;
@@ -153,6 +152,7 @@ pre:not([class*="language-"]) {
 }
 code {
 	word-break: break-all;
+  background-color: #3c3836;
 }
 
 /* Header */

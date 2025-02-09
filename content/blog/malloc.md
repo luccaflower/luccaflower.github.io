@@ -37,8 +37,8 @@ void *mm_realloc(void *ptr, size_t new_size);
 Each function has the following contracts:
 * `mm_init`: Initialize the memory allocator. Return 0 on success, and -1 on failure.
 * `mm_malloc`: Return a pointer to a memory block that is at least `size` big, or `NULL` if the request fails. `size` cannot be 0.
-* `mm_free`: Deallocate the block of memory starting at the address of `ptr`. `ptr`must be the starting address of an allocated block of memory.
-* `mm_realloc`: Return a pointer to a block of memory that is at least `new_size` big. The data at the returned pointer must be identical to the data at `ptr` up to the `new_size`th byte.
+* `mm_free`: Deallocate the block of memory starting at the address of `ptr`. `ptr` must be the starting address of an allocated block of memory.
+* `mm_realloc`: Return a pointer to a block of memory that is at least `new_size` big. The data at the returned pointer must be identical to the data at `ptr` up to the `new_size`'th byte.
 
 To support our implementation, we're given the `mem_sbrk` function as an analogue to `sbrk`. This function simply increases the heap by the requested size, and returns the base address of the new area. This way, the autograder that is included in the lab can keep track of where memory is allocated on the heap, and inspect it for measuring the correctness and performance of the allocator.
 ## How is this thing scored
@@ -298,7 +298,7 @@ void *mm_realloc(void *bp, size_t size) {
 This implementation simply makes a call to `malloc` for a block of the new size, uses `memcpy` to copy the data of the old block over to the new block, and frees the old block.
 
 With that, we have a fully functional memory allocator. Let's see how it performs.
-```
+```txt
 Results for mm malloc:
 trace  valid  util     ops      secs  Kops/sec
  0       yes   99%    5694  0.003271  1741
@@ -483,7 +483,7 @@ In reality, I didn't actually do it like that. I made many ill-considered change
 
 With the explicit free-list done, let's run the autograder and measure our performance:
 **LIFO**:
-```
+```txt
 Results for mm malloc:
 trace  valid  util     ops      secs  Kops/sec
  0       yes   89%    5694  0.000093 61160
@@ -502,7 +502,7 @@ Total          71%  112372  0.030070  3737
 Perf index = 42 (util) + 5 (thru) = 47/100
 ```
 **FIFO**:
-```
+```txt
 Results for mm malloc:
 trace  valid  util     ops      secs  Kops/sec
  0       yes   98%    5694  0.000062 92435
@@ -535,7 +535,7 @@ For the autograder, this is no problem, because the autograder's heap is limited
 
 `size_t` is an unsigned integer data type in C used to represent the size of an object. Since an object, in theory, could be as large as the entire virtual address space, `size_t` needs to be able to accommodate a size that is at least as large (at least, I assume this to be the case, I haven't actually looked that up). As such, `size_t` is 4 bytes on x86, and 8 bytes on x64. From this point onward, block metadata is represented using a `size_t` instead of an `unsigned int`.
 
-```
+```txt
 Results for mm malloc:
 trace  valid  util     ops      secs  Kops
  0       yes   89%    5694  0.000114 49904
@@ -597,7 +597,7 @@ Then all we need to do is allocate some extra space on the heap for the array of
 (yes, the outer loop could have been a for-loop too)
 
 And that's all there is to it. Let's see how it compares.
-```
+```txt
 Results for mm malloc:
 trace  valid  util     ops      secs  Kops
  0       yes   98%    5694  0.000098 57925
@@ -666,7 +666,7 @@ In case 2, we can avoid the reallocation and copying by coalescing with the next
 ```
 
 Let's see how that performs.
-```
+```txt
 Results for mm malloc:
 trace  valid  util     ops      secs  Kops
  0       yes   98%    5694  0.000121 47136
