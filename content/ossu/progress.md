@@ -45,7 +45,7 @@ This repository tracks my progress through the OSSU Computer Science curriculum.
 | :---------------------------------: | :-------------------------------------------------------------------------------------------------------------------: | :-------------: | :-------: |
 |   Hebrew University of Jerusalem    | [Build a Modern Computer from First Principles: From Nand to Tetris](https://www.coursera.org/learn/build-a-computer) |  2024-03-02     |    ✅     |
 |   Hebrew University of Jerusalem    | [Build a Modern Computer from First Principles: Nand to Tetris Part II](https://www.coursera.org/learn/nand2tetris2)  |  2024-04-20     |    ✅     |
-|   Carnegie Mellon University        | [Introduction to Computer Systems](https://www.cs.cmu.edu/afs/cs/academic/class/15213-f15/www/index.html)             |        -        |    ⏩     |
+|   Carnegie Mellon University        | [Introduction to Computer Systems](https://www.cs.cmu.edu/afs/cs/academic/class/15213-f15/www/index.html)             |  2025-03-02     |    ✅     |
 |   University of Wisconsin–Madison   | [Operating Systems: Three Easy Pieces](http://pages.cs.wisc.edu/~remzi/Classes/537/Spring2018/)                       |        -        |     -     |
 | University of Massachusetts Amherst | [Computer Networking: a Top-Down Approach](http://gaia.cs.umass.edu/kurose_ross/online_lectures.htm)                  |        -        |     -     |
 
