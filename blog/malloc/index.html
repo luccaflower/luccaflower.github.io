@@ -7,7 +7,7 @@
 		<meta name="description" content="At Carnegie Mellon University, computer science student taking the &quot;Introduction to Computer Systems&quot; course are asked to implement their own version of &quot;malloc&quot;, the dynamic memory allocator offered by the C standard library. Let&#39;s talk about that.">
 		<link rel="alternate" href="feed/feed.xml" type="application/atom+xml" title="0x1eaf">
 
-		<meta name="generator" content="Eleventy v3.0.0">
+		<meta name="generator" content="Eleventy v3.1.0">
 		<style>/*
  Gruvbox theme adapted from:
 
@@ -793,133 +793,133 @@ In either case it is a standard implementation of a doubly-linked list,
 so I won't bore you with the details.</li>
 </ul>
 <p>Now, it turns out that we only have to make some pretty minor changes to our existing code in order to implement the explicit free-list. Let's look at <code>mm_malloc</code>:</p>
-<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">void *mm_malloc(size_t size) {
-</span></span>...
-<span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    if (size &lt;= d_size) {
-</span><span class="token prefix deleted">-</span><span class="token line">        adj_size = 2 * d_size;
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    if (size &lt;= 3 * w_size) {
-</span><span class="token prefix inserted">+</span><span class="token line">        adj_size = min_block_size;
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    } else {
-</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">        adj_size = d_size * ((size + (d_size) + (d_size - 1)) / d_size);
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        adj_size = ((w_size + size - 1) | 0x7) + 1; // size + header
-</span></span>...</code></pre>
+<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span>void *mm_malloc(size_t size) {
+</span>...
+<span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    if (size &lt;= d_size) {
+<span class="token prefix deleted">-</span>        adj_size = 2 * d_size;
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    if (size &lt;= 3 * w_size) {
+<span class="token prefix inserted">+</span>        adj_size = min_block_size;
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    } else {
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>        adj_size = d_size * ((size + (d_size) + (d_size - 1)) / d_size);
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        adj_size = ((w_size + size - 1) | 0x7) + 1; // size + header
+</span>...</code></pre>
 <p>Because each free block now needs to hold two pointers, a header, and a footer, the minimum block size has to be increased in order to accommodate one. A constant has been introduced to encode this value. I also decided to change the way that the alignment operation is implemented.</p>
 <p><code>extend_heap</code> and <code>mm_free</code> just need to insert the new free block into the free-list.</p>
 <pre class="language-diff" tabindex="0"><code class="language-diff">static void *extend_heap(size_t size) {
-<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    size = ((size - 1) | 0x7) + 1;
-</span><span class="token prefix unchanged"> </span><span class="token line">    char *bp;
-</span></span>
-<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    if ((long)(bp = mem_sbrk(size)) == -1)
-</span><span class="token prefix unchanged"> </span><span class="token line">        return NULL;
-</span></span>
-<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    put(header(bp), pack(size, 0));
-</span><span class="token prefix unchanged"> </span><span class="token line">    put(footer(bp), pack(size, 0));
-</span><span class="token prefix unchanged"> </span><span class="token line">    put(header(next_block_pointer(bp)), pack(0, 1));
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    bp = coalesce(bp);
-</span><span class="token prefix inserted">+</span><span class="token line">    insert_node((free_node_t *)bp);
-</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    return coalesce(bp);
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    return bp;
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">}
-</span></span>
-<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">void mm_free(void *bp) {
-</span><span class="token prefix unchanged"> </span><span class="token line">    size_t size = get_size(header(bp));
-</span></span>
-<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    put(header(bp), pack(size, 0));
-</span><span class="token prefix unchanged"> </span><span class="token line">    put(footer(bp), pack(size, 0));
-</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    coalesce(bp);
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    bp = coalesce(bp);
-</span><span class="token prefix inserted">+</span><span class="token line">    insert_node(bp);
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">}
-</span></span></code></pre>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>    size = ((size - 1) | 0x7) + 1;
+<span class="token prefix unchanged"> </span>    char *bp;
+</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>    if ((long)(bp = mem_sbrk(size)) == -1)
+<span class="token prefix unchanged"> </span>        return NULL;
+</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>    put(header(bp), pack(size, 0));
+<span class="token prefix unchanged"> </span>    put(footer(bp), pack(size, 0));
+<span class="token prefix unchanged"> </span>    put(header(next_block_pointer(bp)), pack(0, 1));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    bp = coalesce(bp);
+<span class="token prefix inserted">+</span>    insert_node((free_node_t *)bp);
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    return coalesce(bp);
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    return bp;
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>}
+</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>void mm_free(void *bp) {
+<span class="token prefix unchanged"> </span>    size_t size = get_size(header(bp));
+</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>    put(header(bp), pack(size, 0));
+<span class="token prefix unchanged"> </span>    put(footer(bp), pack(size, 0));
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    coalesce(bp);
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    bp = coalesce(bp);
+<span class="token prefix inserted">+</span>    insert_node(bp);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>}
+</span></code></pre>
 <p><code>coalesce</code> is now responsible for removing consolidated blocks from the free list.</p>
-<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">static void *coalesce(char *bp) {
-</span><span class="token prefix unchanged"> </span><span class="token line">    size_t prev_alloc = get_alloc(footer(prev_block_pointer(bp)));
-</span><span class="token prefix unchanged"> </span><span class="token line">    size_t next_alloc = get_alloc(header(next_block_pointer(bp)));
-</span><span class="token prefix unchanged"> </span><span class="token line">    size_t size = get_size(header(bp));
-</span></span>
-<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    if (prev_alloc &amp;&amp; next_alloc)
-</span><span class="token prefix unchanged"> </span><span class="token line">        return bp;
-</span><span class="token prefix unchanged"> </span><span class="token line">    else if (prev_alloc &amp;&amp; !next_alloc) {
-</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">        size += get_size(header(next_block_pointer(bp)));
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        char *next_bp = next_block_pointer(bp);
-</span><span class="token prefix inserted">+</span><span class="token line">        size += get_size(header(next_bp));
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        put(header(bp), pack(size, 0));
-</span><span class="token prefix unchanged"> </span><span class="token line">        put(footer(bp), pack(size, 0));
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        free_node_t *neighbour_node = (free_node_t *)next_bp;
-</span><span class="token prefix inserted">+</span><span class="token line">        remove_node(neighbour_node);
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    } else if (!prev_alloc &amp;&amp; next_alloc) {
-</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">        size += get_size(footer(prev_block_pointer(bp)));
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        char *prev_bp = prev_block_pointer(bp);
-</span><span class="token prefix inserted">+</span><span class="token line">        size += get_size(footer(prev_bp));
-</span><span class="token prefix inserted">+</span><span class="token line">        free_node_t *prev_node = (free_node_t *)prev_bp;
-</span><span class="token prefix inserted">+</span><span class="token line">        remove_node(prev_node);
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        put(footer(bp), pack(size, 0));
-</span><span class="token prefix unchanged"> </span><span class="token line">        put(header(prev_block_pointer(bp)), pack(size, 0));
-</span><span class="token prefix unchanged"> </span><span class="token line">        bp = prev_block_pointer(bp);
-</span><span class="token prefix unchanged"> </span><span class="token line">    } else {
-</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">        size += get_size(footer(prev_block_pointer(bp))) +
-</span><span class="token prefix deleted">-</span><span class="token line">                get_size(header(next_block_pointer(bp)));
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        char *next_bp = next_block_pointer(bp);
-</span><span class="token prefix inserted">+</span><span class="token line">        char *prev_bp = prev_block_pointer(bp);
-</span><span class="token prefix inserted">+</span><span class="token line">        size += get_size(footer(prev_bp))
-</span><span class="token prefix inserted">+</span><span class="token line">            + get_size(header(next_bp));
-</span><span class="token prefix inserted">+</span><span class="token line">        free_node_t *prev_node = (free_node_t *)prev_bp;
-</span><span class="token prefix inserted">+</span><span class="token line">        remove_node(prev_node);
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        put(header(prev_block_pointer(bp)), pack(size, 0));
-</span><span class="token prefix unchanged"> </span><span class="token line">        put(footer(next_block_pointer(bp)), pack(size, 0));
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        free_node_t *next_node = (free_node_t *)next_bp;
-</span><span class="token prefix inserted">+</span><span class="token line">        remove_node(next_node);
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        bp = prev_block_pointer(bp);
-</span><span class="token prefix unchanged"> </span><span class="token line">    }
-</span></span>
-<span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    return bp;
-</span><span class="token prefix unchanged"> </span><span class="token line">}
-</span></span></code></pre>
+<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span>static void *coalesce(char *bp) {
+<span class="token prefix unchanged"> </span>    size_t prev_alloc = get_alloc(footer(prev_block_pointer(bp)));
+<span class="token prefix unchanged"> </span>    size_t next_alloc = get_alloc(header(next_block_pointer(bp)));
+<span class="token prefix unchanged"> </span>    size_t size = get_size(header(bp));
+</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>    if (prev_alloc &amp;&amp; next_alloc)
+<span class="token prefix unchanged"> </span>        return bp;
+<span class="token prefix unchanged"> </span>    else if (prev_alloc &amp;&amp; !next_alloc) {
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>        size += get_size(header(next_block_pointer(bp)));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        char *next_bp = next_block_pointer(bp);
+<span class="token prefix inserted">+</span>        size += get_size(header(next_bp));
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        put(header(bp), pack(size, 0));
+<span class="token prefix unchanged"> </span>        put(footer(bp), pack(size, 0));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        free_node_t *neighbour_node = (free_node_t *)next_bp;
+<span class="token prefix inserted">+</span>        remove_node(neighbour_node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    } else if (!prev_alloc &amp;&amp; next_alloc) {
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>        size += get_size(footer(prev_block_pointer(bp)));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        char *prev_bp = prev_block_pointer(bp);
+<span class="token prefix inserted">+</span>        size += get_size(footer(prev_bp));
+<span class="token prefix inserted">+</span>        free_node_t *prev_node = (free_node_t *)prev_bp;
+<span class="token prefix inserted">+</span>        remove_node(prev_node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        put(footer(bp), pack(size, 0));
+<span class="token prefix unchanged"> </span>        put(header(prev_block_pointer(bp)), pack(size, 0));
+<span class="token prefix unchanged"> </span>        bp = prev_block_pointer(bp);
+<span class="token prefix unchanged"> </span>    } else {
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>        size += get_size(footer(prev_block_pointer(bp))) +
+<span class="token prefix deleted">-</span>                get_size(header(next_block_pointer(bp)));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        char *next_bp = next_block_pointer(bp);
+<span class="token prefix inserted">+</span>        char *prev_bp = prev_block_pointer(bp);
+<span class="token prefix inserted">+</span>        size += get_size(footer(prev_bp))
+<span class="token prefix inserted">+</span>            + get_size(header(next_bp));
+<span class="token prefix inserted">+</span>        free_node_t *prev_node = (free_node_t *)prev_bp;
+<span class="token prefix inserted">+</span>        remove_node(prev_node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        put(header(prev_block_pointer(bp)), pack(size, 0));
+<span class="token prefix unchanged"> </span>        put(footer(next_block_pointer(bp)), pack(size, 0));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        free_node_t *next_node = (free_node_t *)next_bp;
+<span class="token prefix inserted">+</span>        remove_node(next_node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        bp = prev_block_pointer(bp);
+<span class="token prefix unchanged"> </span>    }
+</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>    return bp;
+<span class="token prefix unchanged"> </span>}
+</span></code></pre>
 <p><code>place</code> removes allocated blocks from the free-list, and inserts newly split blocks back into it.</p>
-<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">static void place(void *bp, size_t size) {
-</span><span class="token prefix unchanged"> </span><span class="token line">    size_t csize = get_size(header(bp));
-</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    if ((csize - size) >= (2 * d_size)) {
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    if ((csize - size) >= min_block_size) {
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        put(header(bp), pack(size, 1));
-</span><span class="token prefix unchanged"> </span><span class="token line">        put(footer(bp), pack(size, 1));
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        free_node_t *node = (free_node_t *)bp;
-</span><span class="token prefix inserted">+</span><span class="token line">        remove_node(node);
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        bp = next_block_pointer(bp);
-</span><span class="token prefix unchanged"> </span><span class="token line">        put(header(bp), pack(csize - size, 0));
-</span><span class="token prefix unchanged"> </span><span class="token line">        put(footer(bp), pack(csize - size, 0));
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        free_node_t *new_node = (free_node_t *)bp;
-</span><span class="token prefix inserted">+</span><span class="token line">        insert_node(new_node);
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    } else {
-</span><span class="token prefix unchanged"> </span><span class="token line">        put(header(bp), pack(csize, 1));
-</span><span class="token prefix unchanged"> </span><span class="token line">        put(footer(bp), pack(csize, 1));
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        free_node_t *node = (free_node_t *)bp;
-</span><span class="token prefix inserted">+</span><span class="token line">        remove_node(node);
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    }
-</span><span class="token prefix unchanged"> </span><span class="token line">}
-</span></span></code></pre>
+<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span>static void place(void *bp, size_t size) {
+<span class="token prefix unchanged"> </span>    size_t csize = get_size(header(bp));
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    if ((csize - size) >= (2 * d_size)) {
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    if ((csize - size) >= min_block_size) {
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        put(header(bp), pack(size, 1));
+<span class="token prefix unchanged"> </span>        put(footer(bp), pack(size, 1));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        free_node_t *node = (free_node_t *)bp;
+<span class="token prefix inserted">+</span>        remove_node(node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        bp = next_block_pointer(bp);
+<span class="token prefix unchanged"> </span>        put(header(bp), pack(csize - size, 0));
+<span class="token prefix unchanged"> </span>        put(footer(bp), pack(csize - size, 0));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        free_node_t *new_node = (free_node_t *)bp;
+<span class="token prefix inserted">+</span>        insert_node(new_node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    } else {
+<span class="token prefix unchanged"> </span>        put(header(bp), pack(csize, 1));
+<span class="token prefix unchanged"> </span>        put(footer(bp), pack(csize, 1));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        free_node_t *node = (free_node_t *)bp;
+<span class="token prefix inserted">+</span>        remove_node(node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    }
+<span class="token prefix unchanged"> </span>}
+</span></code></pre>
 <p>An important lesson that I keep having to relearn is <a href="http://www.laputan.org/mud/mud.html#KeepItWorking">keep it working</a>.  You can implement all the supporting code for the explicit-free list without touching the implicit free-list code at all. None of the code-changes mentioned so far have actually changed any of the behavior of the code at all except for maintaining this, currently inconsequential, data structure, and increasing the minimum block size by 8 bytes. We're still running a working implicit free-list.</p>
 <p>The final code change is to then switch the <code>find_fit</code> function from traversing the list by block size to traversing the linked-list data structure we just implemented.</p>
-<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">static void *find_fit(size_t size) {
-</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    char *bp;
-</span><span class="token prefix deleted">-</span><span class="token line">    for (bp = heap_listp;
-</span><span class="token prefix deleted">-</span><span class="token line">         get_size(header(bp)) > 0;
-</span><span class="token prefix deleted">-</span><span class="token line">         bp = next_block_pointer(bp)
-</span><span class="token prefix deleted">-</span><span class="token line">    ) {
-</span><span class="token prefix deleted">-</span><span class="token line">        if (!get_alloc(header(bp))
-</span><span class="token prefix deleted">-</span><span class="token line">            &amp;&amp; (size &lt;= get_size(header(bp)))
-</span><span class="token prefix deleted">-</span><span class="token line">        ) {
-</span><span class="token prefix deleted">-</span><span class="token line">            heapcheck(__LINE__);
-</span><span class="token prefix deleted">-</span><span class="token line">            return bp;
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    for (free_node_t *node = free_list;
-</span><span class="token prefix inserted">+</span><span class="token line">         node;
-</span><span class="token prefix inserted">+</span><span class="token line">         node = node->next
-</span><span class="token prefix inserted">+</span><span class="token line">    ) {
-</span><span class="token prefix inserted">+</span><span class="token line">        if (size &lt;= get_size(header((char *)node))) {
-</span><span class="token prefix inserted">+</span><span class="token line">            return node;
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        }
-</span><span class="token prefix unchanged"> </span><span class="token line">    }
-</span><span class="token prefix unchanged"> </span><span class="token line">}
-</span></span></code></pre>
+<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span>static void *find_fit(size_t size) {
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    char *bp;
+<span class="token prefix deleted">-</span>    for (bp = heap_listp;
+<span class="token prefix deleted">-</span>         get_size(header(bp)) > 0;
+<span class="token prefix deleted">-</span>         bp = next_block_pointer(bp)
+<span class="token prefix deleted">-</span>    ) {
+<span class="token prefix deleted">-</span>        if (!get_alloc(header(bp))
+<span class="token prefix deleted">-</span>            &amp;&amp; (size &lt;= get_size(header(bp)))
+<span class="token prefix deleted">-</span>        ) {
+<span class="token prefix deleted">-</span>            heapcheck(__LINE__);
+<span class="token prefix deleted">-</span>            return bp;
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    for (free_node_t *node = free_list;
+<span class="token prefix inserted">+</span>         node;
+<span class="token prefix inserted">+</span>         node = node->next
+<span class="token prefix inserted">+</span>    ) {
+<span class="token prefix inserted">+</span>        if (size &lt;= get_size(header((char *)node))) {
+<span class="token prefix inserted">+</span>            return node;
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        }
+<span class="token prefix unchanged"> </span>    }
+<span class="token prefix unchanged"> </span>}
+</span></code></pre>
 <p>In reality, I didn't actually do it like that. I made many ill-considered changes that left me with a hard-to-debug broken allocator, and I ran <code>git restore mm.c</code> at least a few times. So let that be a lesson: keep it working.</p>
 <p>With the explicit free-list done, let's run the autograder and measure our performance:
 <strong>LIFO</strong>:</p>
@@ -991,28 +991,28 @@ Perf index = 42 (util) + 5 (thru) = 47/100</code></pre>
 of the size to calculate the index into the free-list array, and then insert the node into the
 correct free-list like before.</p>
 <p>Then all we need to do is allocate some extra space on the heap for the array of free-lists and initialize it to 0 in <code>mm_init</code> and update <code>find_fit</code>.</p>
-<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">static void *find_fit(size_t size) {
-</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    for (free_node_t *node = free_list;
-</span><span class="token prefix deleted">-</span><span class="token line">         node;
-</span><span class="token prefix deleted">-</span><span class="token line">         node = node->next
-</span><span class="token prefix deleted">-</span><span class="token line">    ) {
-</span><span class="token prefix deleted">-</span><span class="token line">        if (size &lt;= get_size(header((char *)node))) {
-</span><span class="token prefix deleted">-</span><span class="token line">            return node;
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    size_t i = log2_of(size) - 1;
-</span><span class="token prefix inserted">+</span><span class="token line">    while (i &lt; w_bits) {
-</span><span class="token prefix inserted">+</span><span class="token line">        for (free_node_t *node = free_lists[i];
-</span><span class="token prefix inserted">+</span><span class="token line">             node;
-</span><span class="token prefix inserted">+</span><span class="token line">             node = node->next
-</span><span class="token prefix inserted">+</span><span class="token line">        ) {
-</span><span class="token prefix inserted">+</span><span class="token line">            if (size &lt;= get_size(header((char *)node))) {
-</span><span class="token prefix inserted">+</span><span class="token line">                return node;
-</span><span class="token prefix inserted">+</span><span class="token line">            }
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">        }
-</span></span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">        i++;
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    }
-</span><span class="token prefix unchanged"> </span><span class="token line">    return NULL;
-</span><span class="token prefix unchanged"> </span><span class="token line">}
-</span></span></code></pre>
+<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span>static void *find_fit(size_t size) {
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    for (free_node_t *node = free_list;
+<span class="token prefix deleted">-</span>         node;
+<span class="token prefix deleted">-</span>         node = node->next
+<span class="token prefix deleted">-</span>    ) {
+<span class="token prefix deleted">-</span>        if (size &lt;= get_size(header((char *)node))) {
+<span class="token prefix deleted">-</span>            return node;
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    size_t i = log2_of(size) - 1;
+<span class="token prefix inserted">+</span>    while (i &lt; w_bits) {
+<span class="token prefix inserted">+</span>        for (free_node_t *node = free_lists[i];
+<span class="token prefix inserted">+</span>             node;
+<span class="token prefix inserted">+</span>             node = node->next
+<span class="token prefix inserted">+</span>        ) {
+<span class="token prefix inserted">+</span>            if (size &lt;= get_size(header((char *)node))) {
+<span class="token prefix inserted">+</span>                return node;
+<span class="token prefix inserted">+</span>            }
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        }
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        i++;
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    }
+<span class="token prefix unchanged"> </span>    return NULL;
+<span class="token prefix unchanged"> </span>}
+</span></code></pre>
 <p>(yes, the outer loop could have been a for-loop too)</p>
 <p>And that's all there is to it. Let's see how it compares.</p>
 <pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
@@ -1042,40 +1042,40 @@ Perf index = 43 (util) + 5 (thru) = 48/100</code></pre>
 </ol>
 <p>Case 1 is trivial. We simply return the same pointer and do nothing. We could try to split to create a free block of memory, but that appeared to make utilization <em>worse</em>, not <em>better</em>.</p>
 <p>In case 2, we can avoid the reallocation and copying by coalescing with the next block of memory on the condition that it is not already allocated.</p>
-<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">void *mm_realloc(void *bp, size_t size) {
-</span><span class="token prefix unchanged"> </span><span class="token line">    void *oldptr = bp;
-</span></span>
-<span class="token inserted-sign inserted"><span class="token prefix inserted">+</span><span class="token line">    size_t block_size = get_size(header(oldptr));
-</span><span class="token prefix inserted">+</span><span class="token line">    if (size + w_size &lt; block_size) {
-</span><span class="token prefix inserted">+</span><span class="token line">        return oldptr;
-</span><span class="token prefix inserted">+</span><span class="token line">    } else if (size &lt; block_size) {
-</span><span class="token prefix inserted">+</span><span class="token line">        size = block_size;
-</span><span class="token prefix inserted">+</span><span class="token line">    }
-</span><span class="token prefix inserted">+</span><span class="token line">
-</span><span class="token prefix inserted">+</span><span class="token line">    char *next_bp = next_block_pointer(bp);
-</span><span class="token prefix inserted">+</span><span class="token line">    size_t next_alloc = get_alloc(header(next_bp));
-</span><span class="token prefix inserted">+</span><span class="token line">    size_t next_size = get_size(header(next_bp));
-</span><span class="token prefix inserted">+</span><span class="token line">    if (!next_alloc &amp;&amp; size + w_size &lt;= block_size + next_size) {
-</span><span class="token prefix inserted">+</span><span class="token line">        block_size += next_size;
-</span><span class="token prefix inserted">+</span><span class="token line">        put(header(bp), pack(block_size, 1));
-</span><span class="token prefix inserted">+</span><span class="token line">        remove_node((free_node_t *)next_bp);
-</span><span class="token prefix inserted">+</span><span class="token line">        set_prev_alloc(header(next_block_pointer(bp)), 1);
-</span><span class="token prefix inserted">+</span><span class="token line">        heapcheck(__LINE__);
-</span><span class="token prefix inserted">+</span><span class="token line">        return bp;
-</span><span class="token prefix inserted">+</span><span class="token line">    }
-</span><span class="token prefix inserted">+</span><span class="token line">
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    void *newptr = mm_malloc(size);
-</span><span class="token prefix unchanged"> </span><span class="token line">    if (newptr == NULL)
-</span><span class="token prefix unchanged"> </span><span class="token line">        return NULL;
-</span></span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span><span class="token line">    size_t copy_size = get_size(header(oldptr)) - w_size;
-</span><span class="token prefix deleted">-</span><span class="token line">    if (size &lt; copy_size)
-</span><span class="token prefix deleted">-</span><span class="token line">        copy_size = size;
-</span><span class="token prefix deleted">-</span><span class="token line">    memcpy(newptr, oldptr, copy_size);
-</span></span><span class="token unchanged"><span class="token prefix unchanged"> </span><span class="token line">    memcpy(newptr, oldptr, block_size);
-</span><span class="token prefix unchanged"> </span><span class="token line">    mm_free(oldptr);
-</span><span class="token prefix unchanged"> </span><span class="token line">    return newptr;
-</span><span class="token prefix unchanged"> </span><span class="token line">}
-</span></span></code></pre>
+<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span>void *mm_realloc(void *bp, size_t size) {
+<span class="token prefix unchanged"> </span>    void *oldptr = bp;
+</span>
+<span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    size_t block_size = get_size(header(oldptr));
+<span class="token prefix inserted">+</span>    if (size + w_size &lt; block_size) {
+<span class="token prefix inserted">+</span>        return oldptr;
+<span class="token prefix inserted">+</span>    } else if (size &lt; block_size) {
+<span class="token prefix inserted">+</span>        size = block_size;
+<span class="token prefix inserted">+</span>    }
+<span class="token prefix inserted">+</span>
+<span class="token prefix inserted">+</span>    char *next_bp = next_block_pointer(bp);
+<span class="token prefix inserted">+</span>    size_t next_alloc = get_alloc(header(next_bp));
+<span class="token prefix inserted">+</span>    size_t next_size = get_size(header(next_bp));
+<span class="token prefix inserted">+</span>    if (!next_alloc &amp;&amp; size + w_size &lt;= block_size + next_size) {
+<span class="token prefix inserted">+</span>        block_size += next_size;
+<span class="token prefix inserted">+</span>        put(header(bp), pack(block_size, 1));
+<span class="token prefix inserted">+</span>        remove_node((free_node_t *)next_bp);
+<span class="token prefix inserted">+</span>        set_prev_alloc(header(next_block_pointer(bp)), 1);
+<span class="token prefix inserted">+</span>        heapcheck(__LINE__);
+<span class="token prefix inserted">+</span>        return bp;
+<span class="token prefix inserted">+</span>    }
+<span class="token prefix inserted">+</span>
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    void *newptr = mm_malloc(size);
+<span class="token prefix unchanged"> </span>    if (newptr == NULL)
+<span class="token prefix unchanged"> </span>        return NULL;
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    size_t copy_size = get_size(header(oldptr)) - w_size;
+<span class="token prefix deleted">-</span>    if (size &lt; copy_size)
+<span class="token prefix deleted">-</span>        copy_size = size;
+<span class="token prefix deleted">-</span>    memcpy(newptr, oldptr, copy_size);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    memcpy(newptr, oldptr, block_size);
+<span class="token prefix unchanged"> </span>    mm_free(oldptr);
+<span class="token prefix unchanged"> </span>    return newptr;
+<span class="token prefix unchanged"> </span>}
+</span></code></pre>
 <p>Let's see how that performs.</p>
 <pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
 trace  valid  util     ops      secs  Kops
@@ -1112,7 +1112,7 @@ Perf index = 47 (util) + 40 (thru) = 87/100</code></pre>
 			</heading-anchors>
 		</main>
 
-		<!-- This page `/blog/malloc/` was built on 2025-03-02T17:07:01.615Z -->
+		<!-- This page `/blog/malloc/` was built on 2025-05-25T13:15:30.410Z -->
 		<script type="module" src="/dist/xbxy_EL6cU.js"></script>
 	</body>
 </html>

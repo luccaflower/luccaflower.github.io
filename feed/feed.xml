@@ -312,133 +312,133 @@ In either case it is a standard implementation of a doubly-linked list,
 so I won&#39;t bore you with the details.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Now, it turns out that we only have to make some pretty minor changes to our existing code in order to implement the explicit free-list. Let&#39;s look at &lt;code&gt;mm_malloc&lt;/code&gt;:&lt;/p&gt;
-&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;void *mm_malloc(size_t size) {
-&lt;/span&gt;&lt;/span&gt;...
-&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    if (size &amp;lt;= d_size) {
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        adj_size = 2 * d_size;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    if (size &amp;lt;= 3 * w_size) {
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        adj_size = min_block_size;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    } else {
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        adj_size = d_size * ((size + (d_size) + (d_size - 1)) / d_size);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        adj_size = ((w_size + size - 1) | 0x7) + 1; // size + header
-&lt;/span&gt;&lt;/span&gt;...&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;void *mm_malloc(size_t size) {
+&lt;/span&gt;...
+&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    if (size &amp;lt;= d_size) {
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        adj_size = 2 * d_size;
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    if (size &amp;lt;= 3 * w_size) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        adj_size = min_block_size;
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    } else {
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        adj_size = d_size * ((size + (d_size) + (d_size - 1)) / d_size);
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        adj_size = ((w_size + size - 1) | 0x7) + 1; // size + header
+&lt;/span&gt;...&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Because each free block now needs to hold two pointers, a header, and a footer, the minimum block size has to be increased in order to accommodate one. A constant has been introduced to encode this value. I also decided to change the way that the alignment operation is implemented.&lt;/p&gt;
 &lt;p&gt;&lt;code&gt;extend_heap&lt;/code&gt; and &lt;code&gt;mm_free&lt;/code&gt; just need to insert the new free block into the free-list.&lt;/p&gt;
 &lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;static void *extend_heap(size_t size) {
-&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    size = ((size - 1) | 0x7) + 1;
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    char *bp;
-&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    if ((long)(bp = mem_sbrk(size)) == -1)
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        return NULL;
-&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    put(header(bp), pack(size, 0));
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    put(footer(bp), pack(size, 0));
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    put(header(next_block_pointer(bp)), pack(0, 1));
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    bp = coalesce(bp);
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    insert_node((free_node_t *)bp);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    return coalesce(bp);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    return bp;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;}
-&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;void mm_free(void *bp) {
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    size_t size = get_size(header(bp));
-&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    put(header(bp), pack(size, 0));
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    put(footer(bp), pack(size, 0));
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    coalesce(bp);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    bp = coalesce(bp);
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    insert_node(bp);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;}
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    size = ((size - 1) | 0x7) + 1;
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    char *bp;
+&lt;/span&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    if ((long)(bp = mem_sbrk(size)) == -1)
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        return NULL;
+&lt;/span&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    put(header(bp), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    put(footer(bp), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    put(header(next_block_pointer(bp)), pack(0, 1));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    bp = coalesce(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    insert_node((free_node_t *)bp);
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    return coalesce(bp);
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    return bp;
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;void mm_free(void *bp) {
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    size_t size = get_size(header(bp));
+&lt;/span&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    put(header(bp), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    put(footer(bp), pack(size, 0));
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    coalesce(bp);
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    bp = coalesce(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    insert_node(bp);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;&lt;code&gt;coalesce&lt;/code&gt; is now responsible for removing consolidated blocks from the free list.&lt;/p&gt;
-&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;static void *coalesce(char *bp) {
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    size_t prev_alloc = get_alloc(footer(prev_block_pointer(bp)));
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    size_t next_alloc = get_alloc(header(next_block_pointer(bp)));
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    size_t size = get_size(header(bp));
-&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    if (prev_alloc &amp;amp;&amp;amp; next_alloc)
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        return bp;
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    else if (prev_alloc &amp;amp;&amp;amp; !next_alloc) {
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        size += get_size(header(next_block_pointer(bp)));
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        char *next_bp = next_block_pointer(bp);
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        size += get_size(header(next_bp));
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(header(bp), pack(size, 0));
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(footer(bp), pack(size, 0));
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        free_node_t *neighbour_node = (free_node_t *)next_bp;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        remove_node(neighbour_node);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    } else if (!prev_alloc &amp;amp;&amp;amp; next_alloc) {
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        size += get_size(footer(prev_block_pointer(bp)));
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        char *prev_bp = prev_block_pointer(bp);
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        size += get_size(footer(prev_bp));
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        free_node_t *prev_node = (free_node_t *)prev_bp;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        remove_node(prev_node);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(footer(bp), pack(size, 0));
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(header(prev_block_pointer(bp)), pack(size, 0));
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        bp = prev_block_pointer(bp);
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    } else {
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        size += get_size(footer(prev_block_pointer(bp))) +
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;                get_size(header(next_block_pointer(bp)));
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        char *next_bp = next_block_pointer(bp);
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        char *prev_bp = prev_block_pointer(bp);
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        size += get_size(footer(prev_bp))
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;            + get_size(header(next_bp));
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        free_node_t *prev_node = (free_node_t *)prev_bp;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        remove_node(prev_node);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(header(prev_block_pointer(bp)), pack(size, 0));
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(footer(next_block_pointer(bp)), pack(size, 0));
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        free_node_t *next_node = (free_node_t *)next_bp;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        remove_node(next_node);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        bp = prev_block_pointer(bp);
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    }
-&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    return bp;
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;}
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;static void *coalesce(char *bp) {
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    size_t prev_alloc = get_alloc(footer(prev_block_pointer(bp)));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    size_t next_alloc = get_alloc(header(next_block_pointer(bp)));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    size_t size = get_size(header(bp));
+&lt;/span&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    if (prev_alloc &amp;amp;&amp;amp; next_alloc)
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        return bp;
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    else if (prev_alloc &amp;amp;&amp;amp; !next_alloc) {
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        size += get_size(header(next_block_pointer(bp)));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        char *next_bp = next_block_pointer(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        size += get_size(header(next_bp));
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(header(bp), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(footer(bp), pack(size, 0));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *neighbour_node = (free_node_t *)next_bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node(neighbour_node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    } else if (!prev_alloc &amp;amp;&amp;amp; next_alloc) {
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        size += get_size(footer(prev_block_pointer(bp)));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        char *prev_bp = prev_block_pointer(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        size += get_size(footer(prev_bp));
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *prev_node = (free_node_t *)prev_bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node(prev_node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(footer(bp), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(header(prev_block_pointer(bp)), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        bp = prev_block_pointer(bp);
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    } else {
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        size += get_size(footer(prev_block_pointer(bp))) +
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;                get_size(header(next_block_pointer(bp)));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        char *next_bp = next_block_pointer(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        char *prev_bp = prev_block_pointer(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        size += get_size(footer(prev_bp))
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;            + get_size(header(next_bp));
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *prev_node = (free_node_t *)prev_bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node(prev_node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(header(prev_block_pointer(bp)), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(footer(next_block_pointer(bp)), pack(size, 0));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *next_node = (free_node_t *)next_bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node(next_node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        bp = prev_block_pointer(bp);
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    }
+&lt;/span&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    return bp;
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;&lt;code&gt;place&lt;/code&gt; removes allocated blocks from the free-list, and inserts newly split blocks back into it.&lt;/p&gt;
-&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;static void place(void *bp, size_t size) {
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    size_t csize = get_size(header(bp));
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    if ((csize - size) &gt;= (2 * d_size)) {
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    if ((csize - size) &gt;= min_block_size) {
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(header(bp), pack(size, 1));
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(footer(bp), pack(size, 1));
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        free_node_t *node = (free_node_t *)bp;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        remove_node(node);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        bp = next_block_pointer(bp);
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(header(bp), pack(csize - size, 0));
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(footer(bp), pack(csize - size, 0));
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        free_node_t *new_node = (free_node_t *)bp;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        insert_node(new_node);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    } else {
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(header(bp), pack(csize, 1));
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(footer(bp), pack(csize, 1));
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        free_node_t *node = (free_node_t *)bp;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        remove_node(node);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    }
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;}
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;static void place(void *bp, size_t size) {
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    size_t csize = get_size(header(bp));
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    if ((csize - size) &gt;= (2 * d_size)) {
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    if ((csize - size) &gt;= min_block_size) {
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(header(bp), pack(size, 1));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(footer(bp), pack(size, 1));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *node = (free_node_t *)bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node(node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        bp = next_block_pointer(bp);
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(header(bp), pack(csize - size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(footer(bp), pack(csize - size, 0));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *new_node = (free_node_t *)bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        insert_node(new_node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    } else {
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(header(bp), pack(csize, 1));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(footer(bp), pack(csize, 1));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *node = (free_node_t *)bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node(node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    }
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;An important lesson that I keep having to relearn is &lt;a href=&quot;http://www.laputan.org/mud/mud.html#KeepItWorking&quot;&gt;keep it working&lt;/a&gt;.  You can implement all the supporting code for the explicit-free list without touching the implicit free-list code at all. None of the code-changes mentioned so far have actually changed any of the behavior of the code at all except for maintaining this, currently inconsequential, data structure, and increasing the minimum block size by 8 bytes. We&#39;re still running a working implicit free-list.&lt;/p&gt;
 &lt;p&gt;The final code change is to then switch the &lt;code&gt;find_fit&lt;/code&gt; function from traversing the list by block size to traversing the linked-list data structure we just implemented.&lt;/p&gt;
-&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;static void *find_fit(size_t size) {
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    char *bp;
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    for (bp = heap_listp;
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;         get_size(header(bp)) &gt; 0;
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;         bp = next_block_pointer(bp)
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    ) {
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        if (!get_alloc(header(bp))
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;            &amp;amp;&amp;amp; (size &amp;lt;= get_size(header(bp)))
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        ) {
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;            heapcheck(__LINE__);
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;            return bp;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    for (free_node_t *node = free_list;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;         node;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;         node = node-&gt;next
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    ) {
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        if (size &amp;lt;= get_size(header((char *)node))) {
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;            return node;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        }
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    }
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;}
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;static void *find_fit(size_t size) {
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    char *bp;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    for (bp = heap_listp;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;         get_size(header(bp)) &gt; 0;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;         bp = next_block_pointer(bp)
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    ) {
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        if (!get_alloc(header(bp))
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;            &amp;amp;&amp;amp; (size &amp;lt;= get_size(header(bp)))
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        ) {
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;            heapcheck(__LINE__);
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;            return bp;
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    for (free_node_t *node = free_list;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;         node;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;         node = node-&gt;next
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    ) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        if (size &amp;lt;= get_size(header((char *)node))) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;            return node;
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        }
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    }
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;In reality, I didn&#39;t actually do it like that. I made many ill-considered changes that left me with a hard-to-debug broken allocator, and I ran &lt;code&gt;git restore mm.c&lt;/code&gt; at least a few times. So let that be a lesson: keep it working.&lt;/p&gt;
 &lt;p&gt;With the explicit free-list done, let&#39;s run the autograder and measure our performance:
 &lt;strong&gt;LIFO&lt;/strong&gt;:&lt;/p&gt;
@@ -510,28 +510,28 @@ Perf index = 42 (util) + 5 (thru) = 47/100&lt;/code&gt;&lt;/pre&gt;
 of the size to calculate the index into the free-list array, and then insert the node into the
 correct free-list like before.&lt;/p&gt;
 &lt;p&gt;Then all we need to do is allocate some extra space on the heap for the array of free-lists and initialize it to 0 in &lt;code&gt;mm_init&lt;/code&gt; and update &lt;code&gt;find_fit&lt;/code&gt;.&lt;/p&gt;
-&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;static void *find_fit(size_t size) {
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    for (free_node_t *node = free_list;
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;         node;
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;         node = node-&gt;next
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    ) {
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        if (size &amp;lt;= get_size(header((char *)node))) {
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;            return node;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    size_t i = log2_of(size) - 1;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    while (i &amp;lt; w_bits) {
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        for (free_node_t *node = free_lists[i];
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;             node;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;             node = node-&gt;next
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        ) {
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;            if (size &amp;lt;= get_size(header((char *)node))) {
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;                return node;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;            }
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        }
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        i++;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    }
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    return NULL;
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;}
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;static void *find_fit(size_t size) {
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    for (free_node_t *node = free_list;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;         node;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;         node = node-&gt;next
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    ) {
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        if (size &amp;lt;= get_size(header((char *)node))) {
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;            return node;
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    size_t i = log2_of(size) - 1;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    while (i &amp;lt; w_bits) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        for (free_node_t *node = free_lists[i];
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;             node;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;             node = node-&gt;next
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        ) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;            if (size &amp;lt;= get_size(header((char *)node))) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;                return node;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;            }
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        }
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        i++;
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    }
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    return NULL;
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;(yes, the outer loop could have been a for-loop too)&lt;/p&gt;
 &lt;p&gt;And that&#39;s all there is to it. Let&#39;s see how it compares.&lt;/p&gt;
 &lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
@@ -561,40 +561,40 @@ Perf index = 43 (util) + 5 (thru) = 48/100&lt;/code&gt;&lt;/pre&gt;
 &lt;/ol&gt;
 &lt;p&gt;Case 1 is trivial. We simply return the same pointer and do nothing. We could try to split to create a free block of memory, but that appeared to make utilization &lt;em&gt;worse&lt;/em&gt;, not &lt;em&gt;better&lt;/em&gt;.&lt;/p&gt;
 &lt;p&gt;In case 2, we can avoid the reallocation and copying by coalescing with the next block of memory on the condition that it is not already allocated.&lt;/p&gt;
-&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;void *mm_realloc(void *bp, size_t size) {
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    void *oldptr = bp;
-&lt;/span&gt;&lt;/span&gt;
-&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    size_t block_size = get_size(header(oldptr));
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    if (size + w_size &amp;lt; block_size) {
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        return oldptr;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    } else if (size &amp;lt; block_size) {
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        size = block_size;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    }
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    char *next_bp = next_block_pointer(bp);
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    size_t next_alloc = get_alloc(header(next_bp));
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    size_t next_size = get_size(header(next_bp));
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    if (!next_alloc &amp;amp;&amp;amp; size + w_size &amp;lt;= block_size + next_size) {
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        block_size += next_size;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        put(header(bp), pack(block_size, 1));
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        remove_node((free_node_t *)next_bp);
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        set_prev_alloc(header(next_block_pointer(bp)), 1);
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        heapcheck(__LINE__);
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        return bp;
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    }
-&lt;/span&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    void *newptr = mm_malloc(size);
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    if (newptr == NULL)
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        return NULL;
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    size_t copy_size = get_size(header(oldptr)) - w_size;
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    if (size &amp;lt; copy_size)
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;        copy_size = size;
-&lt;/span&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    memcpy(newptr, oldptr, copy_size);
-&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    memcpy(newptr, oldptr, block_size);
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    mm_free(oldptr);
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;    return newptr;
-&lt;/span&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;&lt;span class=&quot;token line&quot;&gt;}
-&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;void *mm_realloc(void *bp, size_t size) {
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    void *oldptr = bp;
+&lt;/span&gt;
+&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    size_t block_size = get_size(header(oldptr));
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    if (size + w_size &amp;lt; block_size) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        return oldptr;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    } else if (size &amp;lt; block_size) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        size = block_size;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    }
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    char *next_bp = next_block_pointer(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    size_t next_alloc = get_alloc(header(next_bp));
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    size_t next_size = get_size(header(next_bp));
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    if (!next_alloc &amp;amp;&amp;amp; size + w_size &amp;lt;= block_size + next_size) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        block_size += next_size;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        put(header(bp), pack(block_size, 1));
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node((free_node_t *)next_bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        set_prev_alloc(header(next_block_pointer(bp)), 1);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        heapcheck(__LINE__);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        return bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    }
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    void *newptr = mm_malloc(size);
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    if (newptr == NULL)
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        return NULL;
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    size_t copy_size = get_size(header(oldptr)) - w_size;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    if (size &amp;lt; copy_size)
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        copy_size = size;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    memcpy(newptr, oldptr, copy_size);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    memcpy(newptr, oldptr, block_size);
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    mm_free(oldptr);
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    return newptr;
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Let&#39;s see how that performs.&lt;/p&gt;
 &lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
 trace  valid  util     ops      secs  Kops
