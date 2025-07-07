@@ -17,15 +17,14 @@
     <id>https://0x1eaf.dev/blog/run-xv6-ostep/</id>
     <content type="html">&lt;p&gt;&lt;a href=&quot;https://pages.cs.wisc.edu/~remzi/OSTEP/&quot;&gt;Operating Systems: Three Easy Pieces&lt;/a&gt; by Remzi Arpaci-Dusseau is a free online textbook, that teaches fundamental operating system concepts. It&#39;s a great read (at least it has been so far), written in a very approachable style. As a companion to the textbook, Remzi has published several &lt;a href=&quot;https://github.com/remzi-arpacidusseau/ostep-projects&quot;&gt;programming projects&lt;/a&gt;, many of which involve hacking on &lt;a href=&quot;https://pdos.csail.mit.edu/6.828/2012/xv6.html&quot;&gt;xv6&lt;/a&gt;, a minimal teaching operating system based on UNIX, developed by MIT.&lt;/p&gt;
 &lt;p&gt;The issue you might encounter, if you try to do these projects, is that the version of xv6 used in OSTEP is the x86-version of xv6, which was discontinued in 2018 after MIT decided to move the xv6 project over to RISC-V. While you might be able to &lt;em&gt;build&lt;/em&gt; the project on a modern machine by disabling the &lt;code&gt;-Werror&lt;/code&gt; compiler flag, running it in QEMU may be a different story, at least out of the box. On my machine running Arch Linux, QEMU hangs with the following message:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;SeaBIOS (version Arch Linux 1.16.3-1-1)
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;SeaBIOS (version Arch Linux 1.16.3-1-1)
 
 
 iPXE (http://ipxe.org) 00:03.0 C900 PCI2.10 PnP PMM+1EFD3360+1EF33360 C900
                                                                                
 
 
-Booting from Hard Disk..
-&lt;/code&gt;&lt;/pre&gt;
+Booting from Hard Disk..&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;No good.&lt;/p&gt;
 &lt;p&gt;Fortunately, it&#39;s fairly easy to set up and environment that is of the era (circa 2018), using either virtual machines or containerization.&lt;/p&gt;
 &lt;p&gt;Because I like to stay in the terminal as much as possible, and because the xv6 Makefile includes targets for running QEMU without a GUI, I decided to go with a Docker container based on Ubuntu 18.04, which is the LTS version of the time. In order to run the projects, you need various build tools included in the build-essentials package, as well as QEMU (obviously), gawk,  GDB for debugging, and finally expect, which is used by the project testing script:&lt;/p&gt;
@@ -61,25 +60,23 @@ Now you should be ready to build, run, and debug.&lt;/li&gt;
 &lt;p&gt;Running xv6 inside QEMU is as simple as running the following command:&lt;/p&gt;
 &lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;token function&quot;&gt;make&lt;/span&gt; qemu-nox&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;You know it&#39;s working if you see the following prompt:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;xv6...
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;xv6...
 cpu1: starting 1
 cpu0: starting 0
 sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
 init: starting sh
-$ 
-&lt;/code&gt;&lt;/pre&gt;
+$ &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Debugging is a bit more involved, but not that difficult.
 Inside the container run the following:&lt;/p&gt;
 &lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;token function&quot;&gt;make&lt;/span&gt; qemu-nox-gdb&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Your output should look a lot like this:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;sed &amp;quot;s/localhost:1234/localhost:25000/&amp;quot; &amp;lt; .gdbinit.tmpl &amp;gt; .gdbinit
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;sed &quot;s/localhost:1234/localhost:25000/&quot; &amp;lt; .gdbinit.tmpl &gt; .gdbinit
 *** Now run &#39;gdb&#39;.
-qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 2 -m 512  -S -gdb tcp::25000
-&lt;/code&gt;&lt;/pre&gt;
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 2 -m 512  -S -gdb tcp::25000&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Now on your host OS, navigate to the same &lt;code&gt;src&lt;/code&gt; folder that xv6 is in, and run:&lt;/p&gt;
 &lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;gdb kernel&lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Inside gdb, run &lt;code&gt;target remote localhost:25000&lt;/code&gt;. This will connect your gdb client to the gdbserver that&#39;s running inside the container. Go ahead and set a breakpoint in main continuing execution. It should stop right at the beginning of main:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;(gdb) target remote localhost:25000
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;(gdb) target remote localhost:25000
 Remote debugging using localhost:25000
 0x0000fff0 in ?? ()
 (gdb) break main
@@ -89,8 +86,7 @@ Continuing.
 
 Thread 1 hit Breakpoint 1, main () at main.c:19
 19	{
-(gdb) 
-&lt;/code&gt;&lt;/pre&gt;
+(gdb) &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;And there you have it. You are now ready to debug your kernel hacking shenanigans.&lt;/p&gt;
 </content>
   </entry>

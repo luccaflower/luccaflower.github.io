@@ -498,15 +498,14 @@ header {
 
 <p><a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">Operating Systems: Three Easy Pieces</a> by Remzi Arpaci-Dusseau is a free online textbook, that teaches fundamental operating system concepts. It's a great read (at least it has been so far), written in a very approachable style. As a companion to the textbook, Remzi has published several <a href="https://github.com/remzi-arpacidusseau/ostep-projects">programming projects</a>, many of which involve hacking on <a href="https://pdos.csail.mit.edu/6.828/2012/xv6.html">xv6</a>, a minimal teaching operating system based on UNIX, developed by MIT.</p>
 <p>The issue you might encounter, if you try to do these projects, is that the version of xv6 used in OSTEP is the x86-version of xv6, which was discontinued in 2018 after MIT decided to move the xv6 project over to RISC-V. While you might be able to <em>build</em> the project on a modern machine by disabling the <code>-Werror</code> compiler flag, running it in QEMU may be a different story, at least out of the box. On my machine running Arch Linux, QEMU hangs with the following message:</p>
-<pre><code>SeaBIOS (version Arch Linux 1.16.3-1-1)
+<pre class="language-txt" tabindex="0"><code class="language-txt">SeaBIOS (version Arch Linux 1.16.3-1-1)
 
 
 iPXE (http://ipxe.org) 00:03.0 C900 PCI2.10 PnP PMM+1EFD3360+1EF33360 C900
                                                                                
 
 
-Booting from Hard Disk..
-</code></pre>
+Booting from Hard Disk..</code></pre>
 <p>No good.</p>
 <p>Fortunately, it's fairly easy to set up and environment that is of the era (circa 2018), using either virtual machines or containerization.</p>
 <p>Because I like to stay in the terminal as much as possible, and because the xv6 Makefile includes targets for running QEMU without a GUI, I decided to go with a Docker container based on Ubuntu 18.04, which is the LTS version of the time. In order to run the projects, you need various build tools included in the build-essentials package, as well as QEMU (obviously), gawk,  GDB for debugging, and finally expect, which is used by the project testing script:</p>
@@ -542,25 +541,23 @@ Now you should be ready to build, run, and debug.</li>
 <p>Running xv6 inside QEMU is as simple as running the following command:</p>
 <pre class="language-sh" tabindex="0"><code class="language-sh"><span class="token function">make</span> qemu-nox</code></pre>
 <p>You know it's working if you see the following prompt:</p>
-<pre><code>xv6...
+<pre class="language-txt" tabindex="0"><code class="language-txt">xv6...
 cpu1: starting 1
 cpu0: starting 0
 sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
 init: starting sh
-$ 
-</code></pre>
+$ </code></pre>
 <p>Debugging is a bit more involved, but not that difficult.
 Inside the container run the following:</p>
 <pre class="language-sh" tabindex="0"><code class="language-sh"><span class="token function">make</span> qemu-nox-gdb</code></pre>
 <p>Your output should look a lot like this:</p>
-<pre><code>sed &quot;s/localhost:1234/localhost:25000/&quot; &lt; .gdbinit.tmpl &gt; .gdbinit
+<pre class="language-txt" tabindex="0"><code class="language-txt">sed "s/localhost:1234/localhost:25000/" &lt; .gdbinit.tmpl > .gdbinit
 *** Now run 'gdb'.
-qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 2 -m 512  -S -gdb tcp::25000
-</code></pre>
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 2 -m 512  -S -gdb tcp::25000</code></pre>
 <p>Now on your host OS, navigate to the same <code>src</code> folder that xv6 is in, and run:</p>
 <pre class="language-sh" tabindex="0"><code class="language-sh">gdb kernel</code></pre>
 <p>Inside gdb, run <code>target remote localhost:25000</code>. This will connect your gdb client to the gdbserver that's running inside the container. Go ahead and set a breakpoint in main continuing execution. It should stop right at the beginning of main:</p>
-<pre><code>(gdb) target remote localhost:25000
+<pre class="language-txt" tabindex="0"><code class="language-txt">(gdb) target remote localhost:25000
 Remote debugging using localhost:25000
 0x0000fff0 in ?? ()
 (gdb) break main
@@ -570,8 +567,7 @@ Continuing.
 
 Thread 1 hit Breakpoint 1, main () at main.c:19
 19	{
-(gdb) 
-</code></pre>
+(gdb) </code></pre>
 <p>And there you have it. You are now ready to debug your kernel hacking shenanigans.</p>
 
 <ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/blog/malloc/">What I learned from re-implementing Malloc</a></li>
@@ -580,7 +576,7 @@ Thread 1 hit Breakpoint 1, main () at main.c:19
 			</heading-anchors>
 		</main>
 
-		<!-- This page `/blog/run-xv6-ostep/` was built on 2025-07-07T08:39:49.030Z -->
+		<!-- This page `/blog/run-xv6-ostep/` was built on 2025-07-07T08:42:19.571Z -->
 		<script type="module" src="/dist/xbxy_EL6cU.js"></script>
 	</body>
 </html>
