@@ -7,7 +7,7 @@ tags:
   - computer systems
   - ossu
 ---
-[Operating Systems: Three Easy Pieces](https://pages.cs.wisc.edu/~remzi/OSTEP/) by Remzi Arpaci-Dusseau is a free online textbook, that teaches fundamental operating system concepts. It's a great read (at least it has been so far), written in a very approachable style. As a companion to the textbook, Remzi has published several [programming projects](https://github.com/remzi-arpacidusseau/ostep-projects), many of which involve hacking on [xv6](https://pdos.csail.mit.edu/6.828/2012/xv6.html), a minimal teaching operating system based on UNIX, developed by MIT.
+[Operating Systems: Three Easy Pieces](https://pages.cs.wisc.edu/~remzi/OSTEP/) by Remzi and Andrea Arpaci-Dusseau is a free online textbook, that teaches fundamental operating system concepts. It's a great read (at least it has been so far), written in a very approachable style. As a companion to the textbook, Remzi has published several [programming projects](https://github.com/remzi-arpacidusseau/ostep-projects), many of which involve hacking on [xv6](https://pdos.csail.mit.edu/6.828/2012/xv6.html), a minimal teaching operating system based on UNIX, developed by MIT.
 
 The issue you might encounter, if you try to do these projects, is that the version of xv6 used in OSTEP is the x86-version of xv6, which was discontinued in 2018 after MIT decided to move the xv6 project over to RISC-V. While you might be able to *build* the project on a modern machine by disabling the `-Werror` compiler flag, running it in QEMU may be a different story, at least out of the box. On my machine running Arch Linux, QEMU hangs with the following message:
 
