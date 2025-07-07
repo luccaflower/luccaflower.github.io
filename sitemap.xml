@@ -27,6 +27,11 @@
 	</url>
 	
 	<url>
+		<loc>https://0x1eaf.dev/blog/run-xv6-ostep/</loc>
+		<lastmod>2025-07-07</lastmod>
+	</url>
+	
+	<url>
 		<loc>https://0x1eaf.dev/blog/</loc>
 		<lastmod>2025-07-07</lastmod>
 	</url>
@@ -53,11 +58,6 @@
 	
 	<url>
 		<loc>https://0x1eaf.dev/feed/feed.xml</loc>
-		<lastmod>2025-07-07</lastmod>
-	</url>
-	
-	<url>
-		<loc>https://0x1eaf.dev/blog/run-xv6-ostep/</loc>
 		<lastmod>2025-07-07</lastmod>
 	</url>
 </urlset>

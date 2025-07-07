@@ -496,7 +496,7 @@ header {
 </ul>
 <hr><strong>Side-stepping the issue of running old xv6 on a newer platform, by running it on an older platform instead.</strong>
 
-<p><a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">Operating Systems: Three Easy Pieces</a> by Remzi Arpaci-Dusseau is a free online textbook, that teaches fundamental operating system concepts. It's a great read (at least it has been so far), written in a very approachable style. As a companion to the textbook, Remzi has published several <a href="https://github.com/remzi-arpacidusseau/ostep-projects">programming projects</a>, many of which involve hacking on <a href="https://pdos.csail.mit.edu/6.828/2012/xv6.html">xv6</a>, a minimal teaching operating system based on UNIX, developed by MIT.</p>
+<p><a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">Operating Systems: Three Easy Pieces</a> by Remzi and Andrea Arpaci-Dusseau is a free online textbook, that teaches fundamental operating system concepts. It's a great read (at least it has been so far), written in a very approachable style. As a companion to the textbook, Remzi has published several <a href="https://github.com/remzi-arpacidusseau/ostep-projects">programming projects</a>, many of which involve hacking on <a href="https://pdos.csail.mit.edu/6.828/2012/xv6.html">xv6</a>, a minimal teaching operating system based on UNIX, developed by MIT.</p>
 <p>The issue you might encounter, if you try to do these projects, is that the version of xv6 used in OSTEP is the x86-version of xv6, which was discontinued in 2018 after MIT decided to move the xv6 project over to RISC-V. While you might be able to <em>build</em> the project on a modern machine by disabling the <code>-Werror</code> compiler flag, running it in QEMU may be a different story, at least out of the box. On my machine running Arch Linux, QEMU hangs with the following message:</p>
 <pre class="language-txt" tabindex="0"><code class="language-txt">SeaBIOS (version Arch Linux 1.16.3-1-1)
 
@@ -576,7 +576,7 @@ Thread 1 hit Breakpoint 1, main () at main.c:19
 			</heading-anchors>
 		</main>
 
-		<!-- This page `/blog/run-xv6-ostep/` was built on 2025-07-07T08:42:19.571Z -->
+		<!-- This page `/blog/run-xv6-ostep/` was built on 2025-07-07T11:22:04.358Z -->
 		<script type="module" src="/dist/xbxy_EL6cU.js"></script>
 	</body>
 </html>
