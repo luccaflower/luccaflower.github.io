@@ -3,8 +3,8 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Code blocks</title>
-		<meta name="description" content="Keeping the snippets consistent with the theme">
+		<title>What I learned from re-implementing Malloc</title>
+		<meta name="description" content="At Carnegie Mellon University, computer science student taking the &quot;Introduction to Computer Systems&quot; course are asked to implement their own version of &quot;malloc&quot;, the dynamic memory allocator offered by the C standard library. Let&#39;s talk about that.">
 		<link rel="alternate" href="feed/feed.xml" type="application/atom+xml" title="0x1eaf">
 
 		<meta name="generator" content="Eleventy v3.1.2">
@@ -486,43 +486,101 @@ header {
 		<main id="skip">
 			<heading-anchors>
 				
-<h1 id="code-blocks">Code blocks</h1>
+<h1 id="what-i-learned-from-re-implementing-malloc">What I learned from re-implementing Malloc</h1>
 
 <ul class="post-metadata">
-	<li><time datetime="2024-12-28">28 December 2024</time></li>
+	<li><time datetime="2025-07-07">07 July 2025</time></li>
+	<li><a href="/tags/programming/" class="post-tag">programming</a>, </li>
+	<li><a href="/tags/computer-systems/" class="post-tag">computer systems</a>, </li>
+	<li><a href="/tags/ossu/" class="post-tag">ossu</a></li>
 </ul>
-<hr><strong>Keeping the snippets consistent with the theme</strong>
+<hr><strong>At Carnegie Mellon University, computer science student taking the &quot;Introduction to Computer Systems&quot; course are asked to implement their own version of &quot;malloc&quot;, the dynamic memory allocator offered by the C standard library. Let&#39;s talk about that.</strong>
 
-<p>In my quest to do as little web-development as possible when making this
-site, I decided to just fork this <a href="https://github.com/11ty/eleventy-base-blog/">base blog</a> repo, and make
-some minor changes to the CSS to fit my needs (such as setting this
-lovely gruvbox-dark color-scheme). As it turns out, this base blog comes
-with the <a href="https://www.11ty.dev/docs/plugins/syntaxhighlight/">syntax highlighting plugin</a> configured, which uses
-PrismJS to do syntax-highlighting on code snippets. It even comes with a
-few preset CSS themes. Now, none of those themes were gruvbox-dark, but
-no problem, I just copied the solarized theme and changed the colors to
-(mostly) match my neovim color-scheme. I think it turned out quite
-nicely:</p>
-<pre class="language-c" tabindex="0"><code class="language-c"><span class="token comment">//comment</span>
-<span class="token keyword">int</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token keyword">int</span> argc<span class="token punctuation">,</span> <span class="token keyword">char</span><span class="token operator">*</span><span class="token operator">*</span> argv<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-	<span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"Hello, World!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span></code></pre>
-<pre class="language-rust" tabindex="0"><code class="language-rust"><span class="token keyword">fn</span> <span class="token function-definition function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-	<span class="token macro property">println!</span><span class="token punctuation">(</span><span class="token string">"Hello, World"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span></code></pre>
-<pre class="language-java" tabindex="0"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Main</span> <span class="token punctuation">{</span>
-	<span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-		<span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Hello, World!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-	<span class="token punctuation">}</span>
-<span class="token punctuation">}</span></code></pre>
+<p><a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">Operating Systems: Three Easy Pieces</a> by Remzi Arpaci-Dusseau is a free online textbook, that teaches fundamental operating system concepts. It's a great read (at least it has been so far), written in a very approachable style. As a companion to the textbook, Remzi has published several <a href="https://github.com/remzi-arpacidusseau/ostep-projects">programming projects</a>, many of which involve hacking on <a href="https://pdos.csail.mit.edu/6.828/2012/xv6.html">xv6</a>, a minimal teaching operating system based on UNIX, developed by MIT.</p>
+<p>The issue you might encounter, if you try to do these projects, is that the version of xv6 used in OSTEP is the x86-version of xv6, which was discontinued in 2018 after MIT decided to move the xv6 project over to RISC-V. While you might be able to <em>build</em> the project on a modern machine by disabling the <code>-Werror</code> compiler flag, running it in QEMU may be a different story, at least out of the box. On my machine running Arch Linux, QEMU hangs with the following message:</p>
+<pre><code>SeaBIOS (version Arch Linux 1.16.3-1-1)
 
-<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/blog/hello/">We&#39;re live</a></li><li class="links-nextprev-next">Next →<br><a href="/blog/ossu-2024-review/">OSSU 2024 In Review</a></li>
+
+iPXE (http://ipxe.org) 00:03.0 C900 PCI2.10 PnP PMM+1EFD3360+1EF33360 C900
+                                                                               
+
+
+Booting from Hard Disk..
+</code></pre>
+<p>No good.</p>
+<p>Fortunately, it's fairly easy to set up and environment that is of the era (circa 2018), using either virtual machines or containerization.</p>
+<p>Because I like to stay in the terminal as much as possible, and because the xv6 Makefile includes targets for running QEMU without a GUI, I decided to go with a Docker container based on Ubuntu 18.04, which is the LTS version of the time. In order to run the projects, you need various build tools included in the build-essentials package, as well as QEMU (obviously), gawk,  GDB for debugging, and finally expect, which is used by the project testing script:</p>
+<pre class="language-Dockerfile" tabindex="0"><code class="language-Dockerfile">FROM ubuntu:18.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get -yq update && apt-get -yq install --no-install-recommends \ 
+    build-essential qemu gawk expect gdb</code></pre>
+<p>The DEBIAN_FRONTEND variable is necessary to avoid the package manager asking for user input during install. Save that file with the name &quot;Dockerfile&quot;.</p>
+<p>Now go ahead and build that image, and give it a nice descriptive name such as, say, &quot;xv6-dev&quot; by running the following command in the same directory as your Dockerfile:</p>
+<pre class="language-sh" tabindex="0"><code class="language-sh"><span class="token function">docker</span> build <span class="token parameter variable">-t</span> xv6-dev <span class="token builtin class-name">.</span></code></pre>
+<p>With that, we now have an image that we can use to build, run, and even debug xv6 in QEMU.</p>
+<h2 id="so-how-do-i-use-this-thing">So how do I use this thing?</h2>
+<p>Obviously a container image is no good if you don't know how to use it. Here's how.</p>
+<p>First, let's assume you're working on a project such as <a href="https://github.com/remzi-arpacidusseau/ostep-projects/tree/master/initial-xv6">initial-xv6</a>, and you've checked out the xv6 repo into a directory named &quot;src&quot;:</p>
+<pre class="language-sh" tabindex="0"><code class="language-sh"><span class="token comment">#inside the initial-xv6 directory</span>
+<span class="token function">git</span> clone https://github.com/mit-pdos/xv6-public.git src</code></pre>
+<p>In that case, navigate to the src directory and run the following:</p>
+<pre class="language-sh" tabindex="0"><code class="language-sh"><span class="token function">docker</span> run <span class="token parameter variable">--rm</span> <span class="token parameter variable">-it</span> <span class="token parameter variable">-v</span> <span class="token variable"><span class="token variable">$(</span><span class="token builtin class-name">pwd</span><span class="token variable">)</span></span>:/xv6 <span class="token parameter variable">--workdir</span> /xv6 <span class="token parameter variable">-p</span> <span class="token string">"25000:25000"</span> xv6-dev /bin/bash</code></pre>
+<p>A quick explanation of the command line arguments:</p>
+<ul>
+<li><code>--rm</code>: removes the container after it stops</li>
+<li><code>-it</code>: let's you interact with a terminal inside the container</li>
+<li><code>-v $(pwd):/xv6</code>: mounts the present working directory to <code>/xv6</code> inside the container</li>
+<li><code>--workdir /xv6</code>: sets the present working directory of the container to <code>/xv6</code></li>
+<li><code>-p &quot;25000:25000&quot;</code>: maps port 25000 of the host to port 25000 of the container.
+Now you should be ready to build, run, and debug.</li>
+</ul>
+<h2 id="building-running-and-debugging-xv6">Building, running, and debugging xv6</h2>
+<p>The xv6 Makefile defines several targets for not just building but also running the project inside QEMU, including targets with &quot;nox&quot; (for &quot;No X (Server)&quot;) in their name, which are used for non-graphical environments. Our Docker container is a non-graphical environment, so that's perfect!</p>
+<p>The eagle-eyed will have noticed that we expose port 25000 on the Docker container and wonder why. That is because the gdb-targets in the Makefile start a gdbserver listening on port 25000, which you can use to remotely debug the kernel using gdb on your host OS.</p>
+<p>Running xv6 inside QEMU is as simple as running the following command:</p>
+<pre class="language-sh" tabindex="0"><code class="language-sh"><span class="token function">make</span> qemu-nox</code></pre>
+<p>You know it's working if you see the following prompt:</p>
+<pre><code>xv6...
+cpu1: starting 1
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ 
+</code></pre>
+<p>Debugging is a bit more involved, but not that difficult.
+Inside the container run the following:</p>
+<pre class="language-sh" tabindex="0"><code class="language-sh"><span class="token function">make</span> qemu-nox-gdb</code></pre>
+<p>Your output should look a lot like this:</p>
+<pre><code>sed &quot;s/localhost:1234/localhost:25000/&quot; &lt; .gdbinit.tmpl &gt; .gdbinit
+*** Now run 'gdb'.
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 2 -m 512  -S -gdb tcp::25000
+</code></pre>
+<p>Now on your host OS, navigate to the same <code>src</code> folder that xv6 is in, and run:</p>
+<pre class="language-sh" tabindex="0"><code class="language-sh">gdb kernel</code></pre>
+<p>Inside gdb, run <code>target remote localhost:25000</code>. This will connect your gdb client to the gdbserver that's running inside the container. Go ahead and set a breakpoint in main continuing execution. It should stop right at the beginning of main:</p>
+<pre><code>(gdb) target remote localhost:25000
+Remote debugging using localhost:25000
+0x0000fff0 in ?? ()
+(gdb) break main
+Breakpoint 1 at 0x80102ea0: file main.c, line 19.
+(gdb) c
+Continuing.
+
+Thread 1 hit Breakpoint 1, main () at main.c:19
+19	{
+(gdb) 
+</code></pre>
+<p>And there you have it. You are now ready to debug your kernel hacking shenanigans.</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/blog/malloc/">What I learned from re-implementing Malloc</a></li>
 </ul>
 
 			</heading-anchors>
 		</main>
 
-		<!-- This page `/blog/code-block-test/` was built on 2025-07-07T08:36:43.463Z -->
+		<!-- This page `/blog/run-xv6-ostep/` was built on 2025-07-07T08:36:43.464Z -->
 		<script type="module" src="/dist/xbxy_EL6cU.js"></script>
 	</body>
 </html>

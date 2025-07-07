@@ -5,11 +5,95 @@
   <subtitle>Personal site and blog.</subtitle>
   <link href="https://0x1eaf.dev/feed/feed.xml" rel="self" />
   <link href="https://0x1eaf.dev/" />
-  <updated>2025-02-01T20:00:00Z</updated>
+  <updated>2025-07-07T09:00:00Z</updated>
   <id>https://0x1eaf.dev/</id>
   <author>
     <name>0x1eaf/lucca</name>
   </author>
+  <entry>
+    <title>What I learned from re-implementing Malloc</title>
+    <link href="https://0x1eaf.dev/blog/run-xv6-ostep/" />
+    <updated>2025-07-07T09:00:00Z</updated>
+    <id>https://0x1eaf.dev/blog/run-xv6-ostep/</id>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;https://pages.cs.wisc.edu/~remzi/OSTEP/&quot;&gt;Operating Systems: Three Easy Pieces&lt;/a&gt; by Remzi Arpaci-Dusseau is a free online textbook, that teaches fundamental operating system concepts. It&#39;s a great read (at least it has been so far), written in a very approachable style. As a companion to the textbook, Remzi has published several &lt;a href=&quot;https://github.com/remzi-arpacidusseau/ostep-projects&quot;&gt;programming projects&lt;/a&gt;, many of which involve hacking on &lt;a href=&quot;https://pdos.csail.mit.edu/6.828/2012/xv6.html&quot;&gt;xv6&lt;/a&gt;, a minimal teaching operating system based on UNIX, developed by MIT.&lt;/p&gt;
+&lt;p&gt;The issue you might encounter, if you try to do these projects, is that the version of xv6 used in OSTEP is the x86-version of xv6, which was discontinued in 2018 after MIT decided to move the xv6 project over to RISC-V. While you might be able to &lt;em&gt;build&lt;/em&gt; the project on a modern machine by disabling the &lt;code&gt;-Werror&lt;/code&gt; compiler flag, running it in QEMU may be a different story, at least out of the box. On my machine running Arch Linux, QEMU hangs with the following message:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;SeaBIOS (version Arch Linux 1.16.3-1-1)
+
+
+iPXE (http://ipxe.org) 00:03.0 C900 PCI2.10 PnP PMM+1EFD3360+1EF33360 C900
+                                                                               
+
+
+Booting from Hard Disk..
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;No good.&lt;/p&gt;
+&lt;p&gt;Fortunately, it&#39;s fairly easy to set up and environment that is of the era (circa 2018), using either virtual machines or containerization.&lt;/p&gt;
+&lt;p&gt;Because I like to stay in the terminal as much as possible, and because the xv6 Makefile includes targets for running QEMU without a GUI, I decided to go with a Docker container based on Ubuntu 18.04, which is the LTS version of the time. In order to run the projects, you need various build tools included in the build-essentials package, as well as QEMU (obviously), gawk,  GDB for debugging, and finally expect, which is used by the project testing script:&lt;/p&gt;
+&lt;pre class=&quot;language-Dockerfile&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-Dockerfile&quot;&gt;FROM ubuntu:18.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get -yq update &amp;&amp; apt-get -yq install --no-install-recommends &#92; 
+    build-essential qemu gawk expect gdb&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The DEBIAN_FRONTEND variable is necessary to avoid the package manager asking for user input during install. Save that file with the name &amp;quot;Dockerfile&amp;quot;.&lt;/p&gt;
+&lt;p&gt;Now go ahead and build that image, and give it a nice descriptive name such as, say, &amp;quot;xv6-dev&amp;quot; by running the following command in the same directory as your Dockerfile:&lt;/p&gt;
+&lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;token function&quot;&gt;docker&lt;/span&gt; build &lt;span class=&quot;token parameter variable&quot;&gt;-t&lt;/span&gt; xv6-dev &lt;span class=&quot;token builtin class-name&quot;&gt;.&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;With that, we now have an image that we can use to build, run, and even debug xv6 in QEMU.&lt;/p&gt;
+&lt;h2 id=&quot;so-how-do-i-use-this-thing&quot;&gt;So how do I use this thing?&lt;/h2&gt;
+&lt;p&gt;Obviously a container image is no good if you don&#39;t know how to use it. Here&#39;s how.&lt;/p&gt;
+&lt;p&gt;First, let&#39;s assume you&#39;re working on a project such as &lt;a href=&quot;https://github.com/remzi-arpacidusseau/ostep-projects/tree/master/initial-xv6&quot;&gt;initial-xv6&lt;/a&gt;, and you&#39;ve checked out the xv6 repo into a directory named &amp;quot;src&amp;quot;:&lt;/p&gt;
+&lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;token comment&quot;&gt;#inside the initial-xv6 directory&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;git&lt;/span&gt; clone https://github.com/mit-pdos/xv6-public.git src&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In that case, navigate to the src directory and run the following:&lt;/p&gt;
+&lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;token function&quot;&gt;docker&lt;/span&gt; run &lt;span class=&quot;token parameter variable&quot;&gt;--rm&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-it&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-v&lt;/span&gt; &lt;span class=&quot;token variable&quot;&gt;&lt;span class=&quot;token variable&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;pwd&lt;/span&gt;&lt;span class=&quot;token variable&quot;&gt;)&lt;/span&gt;&lt;/span&gt;:/xv6 &lt;span class=&quot;token parameter variable&quot;&gt;--workdir&lt;/span&gt; /xv6 &lt;span class=&quot;token parameter variable&quot;&gt;-p&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;25000:25000&quot;&lt;/span&gt; xv6-dev /bin/bash&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A quick explanation of the command line arguments:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;--rm&lt;/code&gt;: removes the container after it stops&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-it&lt;/code&gt;: let&#39;s you interact with a terminal inside the container&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-v $(pwd):/xv6&lt;/code&gt;: mounts the present working directory to &lt;code&gt;/xv6&lt;/code&gt; inside the container&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--workdir /xv6&lt;/code&gt;: sets the present working directory of the container to &lt;code&gt;/xv6&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-p &amp;quot;25000:25000&amp;quot;&lt;/code&gt;: maps port 25000 of the host to port 25000 of the container.
+Now you should be ready to build, run, and debug.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;building-running-and-debugging-xv6&quot;&gt;Building, running, and debugging xv6&lt;/h2&gt;
+&lt;p&gt;The xv6 Makefile defines several targets for not just building but also running the project inside QEMU, including targets with &amp;quot;nox&amp;quot; (for &amp;quot;No X (Server)&amp;quot;) in their name, which are used for non-graphical environments. Our Docker container is a non-graphical environment, so that&#39;s perfect!&lt;/p&gt;
+&lt;p&gt;The eagle-eyed will have noticed that we expose port 25000 on the Docker container and wonder why. That is because the gdb-targets in the Makefile start a gdbserver listening on port 25000, which you can use to remotely debug the kernel using gdb on your host OS.&lt;/p&gt;
+&lt;p&gt;Running xv6 inside QEMU is as simple as running the following command:&lt;/p&gt;
+&lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;token function&quot;&gt;make&lt;/span&gt; qemu-nox&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;You know it&#39;s working if you see the following prompt:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;xv6...
+cpu1: starting 1
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Debugging is a bit more involved, but not that difficult.
+Inside the container run the following:&lt;/p&gt;
+&lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;token function&quot;&gt;make&lt;/span&gt; qemu-nox-gdb&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Your output should look a lot like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;sed &amp;quot;s/localhost:1234/localhost:25000/&amp;quot; &amp;lt; .gdbinit.tmpl &amp;gt; .gdbinit
+*** Now run &#39;gdb&#39;.
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 2 -m 512  -S -gdb tcp::25000
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now on your host OS, navigate to the same &lt;code&gt;src&lt;/code&gt; folder that xv6 is in, and run:&lt;/p&gt;
+&lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;gdb kernel&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Inside gdb, run &lt;code&gt;target remote localhost:25000&lt;/code&gt;. This will connect your gdb client to the gdbserver that&#39;s running inside the container. Go ahead and set a breakpoint in main continuing execution. It should stop right at the beginning of main:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;(gdb) target remote localhost:25000
+Remote debugging using localhost:25000
+0x0000fff0 in ?? ()
+(gdb) break main
+Breakpoint 1 at 0x80102ea0: file main.c, line 19.
+(gdb) c
+Continuing.
+
+Thread 1 hit Breakpoint 1, main () at main.c:19
+19	{
+(gdb) 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And there you have it. You are now ready to debug your kernel hacking shenanigans.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>What I learned from re-implementing Malloc</title>
     <link href="https://0x1eaf.dev/blog/malloc/" />
