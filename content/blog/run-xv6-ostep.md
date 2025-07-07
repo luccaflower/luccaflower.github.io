@@ -1,6 +1,6 @@
 ---
-title: "What I learned from re-implementing Malloc"
-description: "At Carnegie Mellon University, computer science student taking the \"Introduction to Computer Systems\" course are asked to implement their own version of \"malloc\", the dynamic memory allocator offered by the C standard library. Let's talk about that."
+title: "Running and debugging xv6 for OSTEP in a Docker container"
+description: "Side-stepping the issue of running old xv6 on a newer platform, by running it on an older platform instead."
 date: 2025-07-07T09:00:00Z
 tags:
   - programming
