@@ -3,8 +3,8 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>What I learned from re-implementing Malloc</title>
-		<meta name="description" content="At Carnegie Mellon University, computer science student taking the &quot;Introduction to Computer Systems&quot; course are asked to implement their own version of &quot;malloc&quot;, the dynamic memory allocator offered by the C standard library. Let&#39;s talk about that.">
+		<title>Running and debugging xv6 for OSTEP in a Docker container</title>
+		<meta name="description" content="Side-stepping the issue of running old xv6 on a newer platform, by running it on an older platform instead.">
 		<link rel="alternate" href="feed/feed.xml" type="application/atom+xml" title="0x1eaf">
 
 		<meta name="generator" content="Eleventy v3.1.2">
@@ -486,7 +486,7 @@ header {
 		<main id="skip">
 			<heading-anchors>
 				
-<h1 id="what-i-learned-from-re-implementing-malloc">What I learned from re-implementing Malloc</h1>
+<h1 id="running-and-debugging-xv6-for-ostep-in-a-docker-container">Running and debugging xv6 for OSTEP in a Docker container</h1>
 
 <ul class="post-metadata">
 	<li><time datetime="2025-07-07">07 July 2025</time></li>
@@ -494,7 +494,7 @@ header {
 	<li><a href="/tags/computer-systems/" class="post-tag">computer systems</a>, </li>
 	<li><a href="/tags/ossu/" class="post-tag">ossu</a></li>
 </ul>
-<hr><strong>At Carnegie Mellon University, computer science student taking the &quot;Introduction to Computer Systems&quot; course are asked to implement their own version of &quot;malloc&quot;, the dynamic memory allocator offered by the C standard library. Let&#39;s talk about that.</strong>
+<hr><strong>Side-stepping the issue of running old xv6 on a newer platform, by running it on an older platform instead.</strong>
 
 <p><a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">Operating Systems: Three Easy Pieces</a> by Remzi Arpaci-Dusseau is a free online textbook, that teaches fundamental operating system concepts. It's a great read (at least it has been so far), written in a very approachable style. As a companion to the textbook, Remzi has published several <a href="https://github.com/remzi-arpacidusseau/ostep-projects">programming projects</a>, many of which involve hacking on <a href="https://pdos.csail.mit.edu/6.828/2012/xv6.html">xv6</a>, a minimal teaching operating system based on UNIX, developed by MIT.</p>
 <p>The issue you might encounter, if you try to do these projects, is that the version of xv6 used in OSTEP is the x86-version of xv6, which was discontinued in 2018 after MIT decided to move the xv6 project over to RISC-V. While you might be able to <em>build</em> the project on a modern machine by disabling the <code>-Werror</code> compiler flag, running it in QEMU may be a different story, at least out of the box. On my machine running Arch Linux, QEMU hangs with the following message:</p>
@@ -580,7 +580,7 @@ Thread 1 hit Breakpoint 1, main () at main.c:19
 			</heading-anchors>
 		</main>
 
-		<!-- This page `/blog/run-xv6-ostep/` was built on 2025-07-07T08:36:43.464Z -->
+		<!-- This page `/blog/run-xv6-ostep/` was built on 2025-07-07T08:39:49.030Z -->
 		<script type="module" src="/dist/xbxy_EL6cU.js"></script>
 	</body>
 </html>

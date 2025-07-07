@@ -11,7 +11,7 @@
     <name>0x1eaf/lucca</name>
   </author>
   <entry>
-    <title>What I learned from re-implementing Malloc</title>
+    <title>Running and debugging xv6 for OSTEP in a Docker container</title>
     <link href="https://0x1eaf.dev/blog/run-xv6-ostep/" />
     <updated>2025-07-07T09:00:00Z</updated>
     <id>https://0x1eaf.dev/blog/run-xv6-ostep/</id>
