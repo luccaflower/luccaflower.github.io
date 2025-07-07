@@ -11,7 +11,7 @@ tags:
 
 The issue you might encounter, if you try to do these projects, is that the version of xv6 used in OSTEP is the x86-version of xv6, which was discontinued in 2018 after MIT decided to move the xv6 project over to RISC-V. While you might be able to *build* the project on a modern machine by disabling the `-Werror` compiler flag, running it in QEMU may be a different story, at least out of the box. On my machine running Arch Linux, QEMU hangs with the following message:
 
-```
+```txt
 SeaBIOS (version Arch Linux 1.16.3-1-1)
 
 
@@ -74,7 +74,7 @@ Running xv6 inside QEMU is as simple as running the following command:
 make qemu-nox
 ```
 You know it's working if you see the following prompt:
-```
+```txt
 xv6...
 cpu1: starting 1
 cpu0: starting 0
@@ -89,7 +89,7 @@ Inside the container run the following:
 make qemu-nox-gdb
 ```
 Your output should look a lot like this:
-```
+```txt
 sed "s/localhost:1234/localhost:25000/" < .gdbinit.tmpl > .gdbinit
 *** Now run 'gdb'.
 qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 2 -m 512  -S -gdb tcp::25000
@@ -99,7 +99,7 @@ Now on your host OS, navigate to the same `src` folder that xv6 is in, and run:
 gdb kernel
 ```
 Inside gdb, run `target remote localhost:25000`. This will connect your gdb client to the gdbserver that's running inside the container. Go ahead and set a breakpoint in main continuing execution. It should stop right at the beginning of main:
-```
+```txt
 (gdb) target remote localhost:25000
 Remote debugging using localhost:25000
 0x0000fff0 in ?? ()
