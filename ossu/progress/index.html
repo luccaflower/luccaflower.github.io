@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>0x1eaf</title>
+		<meta name="description" content="Personal site and blog">
+		<link rel="alternate" href="feed/feed.xml" type="application/atom+xml" title="0x1eaf">
+
+		<meta name="generator" content="Eleventy v3.1.2">
+		<style>/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, monospace;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #fbf1c7;
+	--color-gray-50: #ebdbb2;
+	--color-gray-90: #bdae93;
+
+		--background-color: #282828;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #98971a;
+	--text-color-link-active: #d79921;
+	--text-color-link-visited: #b8bb26;
+
+	--syntax-tab-size: 2;
+}
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family-monospace);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 40em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img {
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+header:after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+  background-color: #3c3836;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em .5em;
+	flex-wrap: wrap;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+	margin-right: 2em;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+	margin-right: 1em;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}</style>
+	</head>
+	<body>
+		<a href="#skip" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/" class="home-link">0x1eaf</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/">home</a></li>
+					<li class="nav-item"><a href="/blog/">blog</a></li>
+					<li class="nav-item"><a href="/cv/">cv</a></li>
+					<li class="nav-item"><a href="/ossu/progress/" aria-current="page">ossu progress</a></li>
+					<li class="nav-item"><a href="/feed/feed.xml">rss/atom</a></li>
+					<li class="github"><a href="https://github.com/luccaflower">github</a>
+				</li></ul>
+			</nav>
+		</header>
+
+		<main id="skip">
+			<heading-anchors>
+				
+<h1 align="center" id="open-source-society-university">Open Source Society University</h1>
+<h2 align="center" id="computer-science">Computer Science</h2>
+<h1 id="summary">Summary</h1>
+<p>This repository tracks my progress through the OSSU Computer Science curriculum. I have made some modifications in order to fit my own goals better, or if i have other material that covers the same subject.</p>
+<h1 id="progress">Progress</h1>
+<h2 id="core-cs">Core CS</h2>
+<h3 id="core-programming">Core Programming</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Provider</th>
+<th style="text-align:center">Course</th>
+<th style="text-align:center">Completion Date</th>
+<th style="text-align:center">Completed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">UBCx</td>
+<td style="text-align:center"><a href="https://learning.edx.org/course/course-v1:UBCx+SPD1x+2T2015">Systematic Program Design</a></td>
+<td style="text-align:center">2024-09-21</td>
+<td style="text-align:center">✅</td>
+</tr>
+<tr>
+<td style="text-align:center">University of Washington</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/programming-languages">Programming Languages, Part A</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">University of Washington</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/programming-languages-part-b">Programming Languages, Part B</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">University of Washington</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/programming-languages-part-c">Programming Languages, Part C</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">Textbook</td>
+<td style="text-align:center">The GoF book</td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+</tbody>
+</table>
+<h3 id="core-math">Core Math</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Provider</th>
+<th style="text-align:center">Course</th>
+<th style="text-align:center">Completion Date</th>
+<th style="text-align:center">Completed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Textbook</td>
+<td style="text-align:center">A calculus textbook my boss gave me</td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">Textbook</td>
+<td style="text-align:center">Discrete Mathematics With Applications, Epp S.</td>
+<td style="text-align:center">2025-05-25</td>
+<td style="text-align:center">✅</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cs-tools">CS Tools</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Provider</th>
+<th style="text-align:center">Course</th>
+<th style="text-align:center">Completion Date</th>
+<th style="text-align:center">Completed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">MIT</td>
+<td style="text-align:center"><a href="https://missing.csail.mit.edu/">The Missing Semester of Your CS Education</a></td>
+<td style="text-align:center">2024-04-24</td>
+<td style="text-align:center">✅</td>
+</tr>
+</tbody>
+</table>
+<h3 id="core-systems">Core Systems</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Provider</th>
+<th style="text-align:center">Course</th>
+<th style="text-align:center">Completion Date</th>
+<th style="text-align:center">Completed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Hebrew University of Jerusalem</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/build-a-computer">Build a Modern Computer from First Principles: From Nand to Tetris</a></td>
+<td style="text-align:center">2024-03-02</td>
+<td style="text-align:center">✅</td>
+</tr>
+<tr>
+<td style="text-align:center">Hebrew University of Jerusalem</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/nand2tetris2">Build a Modern Computer from First Principles: Nand to Tetris Part II</a></td>
+<td style="text-align:center">2024-04-20</td>
+<td style="text-align:center">✅</td>
+</tr>
+<tr>
+<td style="text-align:center">Carnegie Mellon University</td>
+<td style="text-align:center"><a href="https://www.cs.cmu.edu/afs/cs/academic/class/15213-f15/www/index.html">Introduction to Computer Systems</a></td>
+<td style="text-align:center">2025-03-02</td>
+<td style="text-align:center">✅</td>
+</tr>
+<tr>
+<td style="text-align:center">University of Wisconsin–Madison</td>
+<td style="text-align:center"><a href="http://pages.cs.wisc.edu/~remzi/Classes/537/Spring2018/">Operating Systems: Three Easy Pieces</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">⏩</td>
+</tr>
+<tr>
+<td style="text-align:center">University of Massachusetts Amherst</td>
+<td style="text-align:center"><a href="http://gaia.cs.umass.edu/kurose_ross/online_lectures.htm">Computer Networking: a Top-Down Approach</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+</tbody>
+</table>
+<h3 id="core-theory">Core Theory</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Provider</th>
+<th style="text-align:center">Course</th>
+<th style="text-align:center">Completion Date</th>
+<th style="text-align:center">Completed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Stanford University</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/algorithms-divide-conquer">Divide and Conquer, Sorting and Searching, and Randomized Algorithms</a></td>
+<td style="text-align:center">2025-07-05</td>
+<td style="text-align:center">✅</td>
+</tr>
+<tr>
+<td style="text-align:center">Stanford University</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/algorithms-graphs-data-structures">Graph Search, Shortest Paths, and Data Structures</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">⏩</td>
+</tr>
+<tr>
+<td style="text-align:center">Stanford University</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/algorithms-greedy">Greedy Algorithms, Minimum Spanning Trees, and Dynamic Programming</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">Stanford University</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/algorithms-npcomplete">Shortest Paths Revisited, NP-Complete Problems and What To Do About Them</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+</tbody>
+</table>
+<h3 id="core-security">Core Security</h3>
+<!-- Choose either the C/C++ or Java course -->
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Provider</th>
+<th style="text-align:center">Course</th>
+<th style="text-align:center">Completion Date</th>
+<th style="text-align:center">Completed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">RITx</td>
+<td style="text-align:center"><a href="https://www.edx.org/course/cybersecurity-fundamentals">Cybersecurity Fundamentals</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">UC Davis</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/secure-coding-principles">Principles of Secure Coding</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">UC Davis</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/identifying-security-vulnerabilities">Identifying Security Vulnerabilities</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">UC Davis</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/identifying-security-vulnerabilities-c-programming">Identifying Security Vulnerabilities in C/C++ Programming</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">UC Davis</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/exploiting-securing-vulnerabilities-java-applications">Exploiting and Securing Vulnerabilities in Java Applications</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+</tbody>
+</table>
+<h3 id="core-applications">Core Applications</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Provider</th>
+<th style="text-align:center">Course</th>
+<th style="text-align:center">Completion Date</th>
+<th style="text-align:center">Completed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Stanford Online</td>
+<td style="text-align:center"><a href="https://www.edx.org/course/modeling-and-theory">Databases: Modeling and Theory</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">Stanford Online</td>
+<td style="text-align:center"><a href="https://www.edx.org/course/databases-5-sql">Databases: Relational Databases and SQL</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">Stanford Online</td>
+<td style="text-align:center"><a href="https://www.edx.org/course/semistructured-data">Databases: Semistructured Data</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">Stanford Online</td>
+<td style="text-align:center"><a href="https://www.coursera.org/specializations/machine-learning-introduction">Machine Learning</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">UC San DiegoX</td>
+<td style="text-align:center"><a href="https://www.edx.org/course/computer-graphics-2">Computer Graphics</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">IBM</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/introduction-to-software-engineering">Introduction to Software Engineering</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+</tbody>
+</table>
+<h3 id="core-ethics">Core Ethics</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">Provider</th>
+<th style="text-align:center">Course</th>
+<th style="text-align:center">Completion Date</th>
+<th style="text-align:center">Completed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">Eindhoven University of Technology</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/ethics-technology-engineering">Ethics, Technology and Engineering</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">University of Pennsylvania</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/introduction-intellectual-property">Introduction to Intellectual Property</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td style="text-align:center">Northeastern University</td>
+<td style="text-align:center"><a href="https://www.coursera.org/learn/northeastern-data-privacy">Data Privacy Fundamentals</a></td>
+<td style="text-align:center">-</td>
+<td style="text-align:center">-</td>
+</tr>
+</tbody>
+</table>
+<!--
+## Advanced CS
+
+### Advanced Programming
+
+|        Provider         |                                      Course                                       | Completion Date | Proof | Repository |
+| :---------------------: | :-------------------------------------------------------------------------------: | :-------------: | :---: | :--------: |
+|          EPFL           | [Parallel Programming](https://www.coursera.org/learn/scala-parallel-programming) |        -        |   -   |     -      |
+|     Stanford Online     |                 [Compilers](https://www.edx.org/course/compilers)                 |        -        |   -   |     -      |
+|          UPenn          |       [Introduction to Haskell](https://www.seas.upenn.edu/~cis194/fall16/)       |        -        |   -   |     -      |
+| University of Groningen |  [Learn Prolog Now!](https://www.let.rug.nl/bos/lpn//lpnpage.php?pageid=online)   |        -        |   -   |     -      |
+|         Udacity         |  [Software Debugging](https://www.udacity.com/course/software-debugging--cs259)   |        -        |   -   |     -      |
+|         Udacity         |    [Software Testing](https://www.udacity.com/course/software-testing--cs258)     |        -        |   -   |     -      |
+
+### Advanced Systems
+
+| Provider |                                                       Course                                                        | Completion Date | Proof | Repository |
+| :------: | :-----------------------------------------------------------------------------------------------------------------: | :-------------: | :---: | :--------: |
+|   MITx   |   [Computation Structures 1: Digital Circuits](https://learning.edx.org/course/course-v1:MITx+6.004.1x_3+3T2016)    |        -        |   -   |     -      |
+|   MITx   |  [Computation Structures 2: Computer Architecture](https://learning.edx.org/course/course-v1:MITx+6.004.2x+3T2015)  |        -        |   -   |     -      |
+|   MITx   | [Computation Structures 3: Computer Organization](https://learning.edx.org/course/course-v1:MITx+6.004.3x_2+1T2017) |        -        |   -   |     -      |
+
+### Advanced Theory
+
+|       Provider        |                                   Course                                    | Completion Date | Proof | Repository |
+| :-------------------: | :-------------------------------------------------------------------------: | :-------------: | :---: | :--------: |
+| ArsDigita University  | [Theory of Computation](http://aduni.org/courses/theory/index.php?view=cw)  |        -        |   -   |     -      |
+|  Tsinghua University  | [Computational Geometry](https://www.edx.org/course/computational-geometry) |        -        |   -   |     -      |
+| Stanford Online & UBC |         [Game Theory](https://www.coursera.org/learn/game-theory-1)         |        -        |   -   |     -      |
+
+### Advanced Information Security
+
+|             Provider             |                                                                                  Course                                                                                  | Completion Date | Proof | Repository |
+| :------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-------------: | :---: | :--------: |
+|            KULeuvenX             |                                            [Web Security Fundamentals](https://www.edx.org/course/web-security-fundamentals)                                             |        -        |   -   |     -      |
+| University of California, Irvine |                                    [Security Governance & Compliance](https://www.coursera.org/learn/security-governance-compliance)                                     |        -        |   -   |     -      |
+|             Infosec              |                                         [Digital Forensics Concepts](https://www.coursera.org/learn/digital-forensics-concepts)                                          |        -        |   -   |     -      |
+|         LinuxFoundationX         |           [Secure Software Development: Requirements, Design, and Reuse](https://www.edx.org/course/secure-software-development-requirements-design-and-reuse)           |        -        |   -   |     -      |
+|         LinuxFoundationX         |                           [Secure Software Development: Implementation](https://www.edx.org/course/secure-software-development-implementation)                           |        -        |   -   |     -      |
+|         LinuxFoundationX         | [Secure Software Development: Verification and More Specialized Topics](https://www.edx.org/course/secure-software-development-verification-and-more-specialized-topics) |        -        |   -   |     -      |
+
+### Advanced Math
+
+|      Provider      |                                                         Course                                                          | Completion Date | Proof | Repository |
+| :----------------: | :---------------------------------------------------------------------------------------------------------------------: | :-------------: | :---: | :--------: |
+|    3Blue1Brown     |          [Essence of Linear Algebra](https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab)          |        -        |   -   |     -      |
+|      MIT OCW       |               [Linear Algebra](https://ocw.mit.edu/courses/mathematics/18-06sc-linear-algebra-fall-2011/)               |        -        |   -   |     -      |
+|      MIT OCW       | [Introduction to Numerical Methods](https://ocw.mit.edu/courses/18-335j-introduction-to-numerical-methods-spring-2019/) |        -        |   -   |     -      |
+| Open Logic Project |                          [Introduction to Formal Logic](https://forallx.openlogicproject.org/)                          |        -        |   -   |     -      |
+|      Harvard       |                               [Probability](https://projects.iq.harvard.edu/stat110/home)                               |        -        |   -   |     -      |
+
+## Final Project
+
+|         Provider          |                                                   Specialization                                                    | Completion Date | Proof | Repository |
+| :-----------------------: | :-----------------------------------------------------------------------------------------------------------------: | :-------------: | :---: | :--------: |
+|  University of Helsinki   |                                   [Fullstack Open](https://fullstackopen.com/en)                                    |        -        |   -   |     -      |
+|       Northwestern        |                     [Modern Robotics](https://www.coursera.org/specializations/modernrobotics)                      |        -        |   -   |     -      |
+|  University of Illinois   |                         [Data Mining](https://www.coursera.org/specializations/data-mining)                         |        -        |   -   |     -      |
+|       UC San Diego        |                            [Big Data](https://www.coursera.org/specializations/big-data)                            |        -        |   -   |     -      |
+|       UC San Diego        |                  [Internet of Things](https://www.coursera.org/specializations/internet-of-things)                  |        -        |   -   |     -      |
+|  University of Illinois   |                     [Cloud Computing](https://www.coursera.org/specializations/cloud-computing)                     |        -        |   -   |     -      |
+| Johns Hopkins University  |                      [Data Science](https://www.coursera.org/specializations/jhu-data-science)                      |        -        |   -   |     -      |
+|           EPFL            |                  [Functional Programming in Scala](https://www.coursera.org/specializations/scala)                  |        -        |   -   |     -      |
+| Michigan State University | [Game Design and Development with Unity 2020](https://www.coursera.org/specializations/game-design-and-development) |        -        |   -   |     -      |
+-->
+
+
+			</heading-anchors>
+		</main>
+
+		<!-- This page `/ossu/progress/` was built on 2025-12-15T06:08:29.275Z -->
+		<script type="module" src="/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

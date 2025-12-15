@@ -1,0 +1,926 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet href="pretty-atom-feed.xsl" type="text/xsl"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+  <title>0x1eaf</title>
+  <subtitle>Personal site and blog.</subtitle>
+  <link href="https://0x1eaf.dev/feed/feed.xml" rel="self" />
+  <link href="https://0x1eaf.dev/" />
+  <updated>2025-07-07T09:00:00Z</updated>
+  <id>https://0x1eaf.dev/</id>
+  <author>
+    <name>0x1eaf/lucca</name>
+  </author>
+  <entry>
+    <title>Running and debugging xv6 for OSTEP in a Docker container</title>
+    <link href="https://0x1eaf.dev/blog/run-xv6-ostep/" />
+    <updated>2025-07-07T09:00:00Z</updated>
+    <id>https://0x1eaf.dev/blog/run-xv6-ostep/</id>
+    <content type="html">&lt;p&gt;&lt;a href=&quot;https://pages.cs.wisc.edu/~remzi/OSTEP/&quot;&gt;Operating Systems: Three Easy Pieces&lt;/a&gt; by Remzi and Andrea Arpaci-Dusseau is a free online textbook, that teaches fundamental operating system concepts. It&#39;s a great read (at least it has been so far), written in a very approachable style. As a companion to the textbook, Remzi has published several &lt;a href=&quot;https://github.com/remzi-arpacidusseau/ostep-projects&quot;&gt;programming projects&lt;/a&gt;, many of which involve hacking on &lt;a href=&quot;https://pdos.csail.mit.edu/6.828/2012/xv6.html&quot;&gt;xv6&lt;/a&gt;, a minimal teaching operating system based on UNIX, developed by MIT.&lt;/p&gt;
+&lt;p&gt;The issue you might encounter, if you try to do these projects, is that the version of xv6 used in OSTEP is the x86-version of xv6, which was discontinued in 2018 after MIT decided to move the xv6 project over to RISC-V. While you might be able to &lt;em&gt;build&lt;/em&gt; the project on a modern machine by disabling the &lt;code&gt;-Werror&lt;/code&gt; compiler flag, running it in QEMU may be a different story, at least out of the box. On my machine running Arch Linux, QEMU hangs with the following message:&lt;/p&gt;
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;SeaBIOS (version Arch Linux 1.16.3-1-1)
+
+
+iPXE (http://ipxe.org) 00:03.0 C900 PCI2.10 PnP PMM+1EFD3360+1EF33360 C900
+                                                                               
+
+
+Booting from Hard Disk..&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;No good.&lt;/p&gt;
+&lt;p&gt;Fortunately, it&#39;s fairly easy to set up and environment that is of the era (circa 2018), using either virtual machines or containerization.&lt;/p&gt;
+&lt;p&gt;Because I like to stay in the terminal as much as possible, and because the xv6 Makefile includes targets for running QEMU without a GUI, I decided to go with a Docker container based on Ubuntu 18.04, which is the LTS version of the time. In order to run the projects, you need various build tools included in the build-essentials package, as well as QEMU (obviously), gawk,  GDB for debugging, and finally expect, which is used by the project testing script:&lt;/p&gt;
+&lt;pre class=&quot;language-Dockerfile&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-Dockerfile&quot;&gt;FROM ubuntu:18.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get -yq update &amp;&amp; apt-get -yq install --no-install-recommends &#92; 
+    build-essential qemu gawk expect gdb&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The DEBIAN_FRONTEND variable is necessary to avoid the package manager asking for user input during install. Save that file with the name &amp;quot;Dockerfile&amp;quot;.&lt;/p&gt;
+&lt;p&gt;Now go ahead and build that image, and give it a nice descriptive name such as, say, &amp;quot;xv6-dev&amp;quot; by running the following command in the same directory as your Dockerfile:&lt;/p&gt;
+&lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;token function&quot;&gt;docker&lt;/span&gt; build &lt;span class=&quot;token parameter variable&quot;&gt;-t&lt;/span&gt; xv6-dev &lt;span class=&quot;token builtin class-name&quot;&gt;.&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;With that, we now have an image that we can use to build, run, and even debug xv6 in QEMU.&lt;/p&gt;
+&lt;h2 id=&quot;so-how-do-i-use-this-thing&quot;&gt;So how do I use this thing?&lt;/h2&gt;
+&lt;p&gt;Obviously a container image is no good if you don&#39;t know how to use it. Here&#39;s how.&lt;/p&gt;
+&lt;p&gt;First, let&#39;s assume you&#39;re working on a project such as &lt;a href=&quot;https://github.com/remzi-arpacidusseau/ostep-projects/tree/master/initial-xv6&quot;&gt;initial-xv6&lt;/a&gt;, and you&#39;ve checked out the xv6 repo into a directory named &amp;quot;src&amp;quot;:&lt;/p&gt;
+&lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;token comment&quot;&gt;#inside the initial-xv6 directory&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;git&lt;/span&gt; clone https://github.com/mit-pdos/xv6-public.git src&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In that case, navigate to the src directory and run the following:&lt;/p&gt;
+&lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;token function&quot;&gt;docker&lt;/span&gt; run &lt;span class=&quot;token parameter variable&quot;&gt;--rm&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-it&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-v&lt;/span&gt; &lt;span class=&quot;token variable&quot;&gt;&lt;span class=&quot;token variable&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;pwd&lt;/span&gt;&lt;span class=&quot;token variable&quot;&gt;)&lt;/span&gt;&lt;/span&gt;:/xv6 &lt;span class=&quot;token parameter variable&quot;&gt;--workdir&lt;/span&gt; /xv6 &lt;span class=&quot;token parameter variable&quot;&gt;-p&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;25000:25000&quot;&lt;/span&gt; xv6-dev /bin/bash&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;A quick explanation of the command line arguments:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;--rm&lt;/code&gt;: removes the container after it stops&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-it&lt;/code&gt;: let&#39;s you interact with a terminal inside the container&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-v $(pwd):/xv6&lt;/code&gt;: mounts the present working directory to &lt;code&gt;/xv6&lt;/code&gt; inside the container&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;--workdir /xv6&lt;/code&gt;: sets the present working directory of the container to &lt;code&gt;/xv6&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;-p &amp;quot;25000:25000&amp;quot;&lt;/code&gt;: maps port 25000 of the host to port 25000 of the container.
+Now you should be ready to build, run, and debug.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;building-running-and-debugging-xv6&quot;&gt;Building, running, and debugging xv6&lt;/h2&gt;
+&lt;p&gt;The xv6 Makefile defines several targets for not just building but also running the project inside QEMU, including targets with &amp;quot;nox&amp;quot; (for &amp;quot;No X (Server)&amp;quot;) in their name, which are used for non-graphical environments. Our Docker container is a non-graphical environment, so that&#39;s perfect!&lt;/p&gt;
+&lt;p&gt;The eagle-eyed will have noticed that we expose port 25000 on the Docker container and wonder why. That is because the gdb-targets in the Makefile start a gdbserver listening on port 25000, which you can use to remotely debug the kernel using gdb on your host OS.&lt;/p&gt;
+&lt;p&gt;Running xv6 inside QEMU is as simple as running the following command:&lt;/p&gt;
+&lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;token function&quot;&gt;make&lt;/span&gt; qemu-nox&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;You know it&#39;s working if you see the following prompt:&lt;/p&gt;
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;xv6...
+cpu1: starting 1
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Debugging is a bit more involved, but not that difficult.
+Inside the container run the following:&lt;/p&gt;
+&lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;token function&quot;&gt;make&lt;/span&gt; qemu-nox-gdb&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Your output should look a lot like this:&lt;/p&gt;
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;sed &quot;s/localhost:1234/localhost:25000/&quot; &amp;lt; .gdbinit.tmpl &gt; .gdbinit
+*** Now run &#39;gdb&#39;.
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 2 -m 512  -S -gdb tcp::25000&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now on your host OS, navigate to the same &lt;code&gt;src&lt;/code&gt; folder that xv6 is in, and run:&lt;/p&gt;
+&lt;pre class=&quot;language-sh&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-sh&quot;&gt;gdb kernel&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Inside gdb, run &lt;code&gt;target remote localhost:25000&lt;/code&gt;. This will connect your gdb client to the gdbserver that&#39;s running inside the container. Go ahead and set a breakpoint in main continuing execution. It should stop right at the beginning of main:&lt;/p&gt;
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;(gdb) target remote localhost:25000
+Remote debugging using localhost:25000
+0x0000fff0 in ?? ()
+(gdb) break main
+Breakpoint 1 at 0x80102ea0: file main.c, line 19.
+(gdb) c
+Continuing.
+
+Thread 1 hit Breakpoint 1, main () at main.c:19
+19	{
+(gdb) &lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;And there you have it. You are now ready to debug your kernel hacking shenanigans.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>What I learned from re-implementing Malloc</title>
+    <link href="https://0x1eaf.dev/blog/malloc/" />
+    <updated>2025-02-01T20:00:00Z</updated>
+    <id>https://0x1eaf.dev/blog/malloc/</id>
+    <content type="html">&lt;h2 id=&quot;whats-in-an-allocator&quot;&gt;What&#39;s in an allocator&lt;/h2&gt;
+&lt;p&gt;A dynamic memory allocator is primarily used for three things:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;To allocate memory whose size is not known at compile-time&lt;/li&gt;
+&lt;li&gt;To allocate very large blocks of memory&lt;/li&gt;
+&lt;li&gt;To allocate memory whose lifetime needs to be longer than the scope of the function that allocates it.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;A general-purpose allocator like malloc really has the following main requirements, many of which are in conflict with each other:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Allocation must be very fast.&lt;/li&gt;
+&lt;li&gt;The allocator must utilize memory efficiently. This means reducing fragmentation and overhead.&lt;/li&gt;
+&lt;li&gt;Memory must be contiguous. If an application asks for a block of a certain size, then that block must be a single block of memory. It cannot be split up.&lt;/li&gt;
+&lt;li&gt;Once a memory block has been allocated, its address cannot be moved unless the application explicitly asks to have it reallocated.&lt;/li&gt;
+&lt;li&gt;Requests for allocation and freeing of memory can come in in any order, and the allocator cannot reorder them. If a request is received. it is immediately serviced.&lt;/li&gt;
+&lt;li&gt;The memory allocator can expect that each allocation request will have a corresponding deallocation request.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The presents an interesting balancing act where the need maximize memory utilization may introduce extra performance overhead, and vice versa. Since live blocks of memory cannot be moved, consolidation of memory blocks can only happen on free blocks of memory. If there are many small fragments of free memory in-between live blocks, too bad, you have to wait until one of those blocks gets freed.&lt;/p&gt;
+&lt;p&gt;We are given some leeway with the last requirement, however, and that is that it is the responsibility of the application to make sure that memory doesn&#39;t leak, that all deallocation requests are valid, and that free memory is never accessed. This means, that the allocator does not need to concern itself with any of those things.&lt;/p&gt;
+&lt;h2 id=&quot;the-malloc-api&quot;&gt;The malloc API&lt;/h2&gt;
+&lt;p&gt;The allocator API that we are going to implement is very simple:&lt;/p&gt;
+&lt;pre class=&quot;language-c&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-c&quot;&gt;&lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;mm_init&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;mm_malloc&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;mm_free&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;ptr&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;mm_realloc&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;ptr&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; new_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Each function has the following contracts:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;mm_init&lt;/code&gt;: Initialize the memory allocator. Return 0 on success, and -1 on failure.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;mm_malloc&lt;/code&gt;: Return a pointer to a memory block that is at least &lt;code&gt;size&lt;/code&gt; big, or &lt;code&gt;NULL&lt;/code&gt; if the request fails. &lt;code&gt;size&lt;/code&gt; cannot be 0.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;mm_free&lt;/code&gt;: Deallocate the block of memory starting at the address of &lt;code&gt;ptr&lt;/code&gt;. &lt;code&gt;ptr&lt;/code&gt; must be the starting address of an allocated block of memory.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;mm_realloc&lt;/code&gt;: Return a pointer to a block of memory that is at least &lt;code&gt;new_size&lt;/code&gt; big. The data at the returned pointer must be identical to the data at &lt;code&gt;ptr&lt;/code&gt; up to the &lt;code&gt;new_size&lt;/code&gt;&#39;th byte.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;To support our implementation, we&#39;re given the &lt;code&gt;mem_sbrk&lt;/code&gt; function as an analogue to &lt;code&gt;sbrk&lt;/code&gt;. This function simply increases the heap by the requested size, and returns the base address of the new area. This way, the autograder that is included in the lab can keep track of where memory is allocated on the heap, and inspect it for measuring the correctness and performance of the allocator.&lt;/p&gt;
+&lt;h2 id=&quot;how-is-this-thing-scored&quot;&gt;How is this thing scored&lt;/h2&gt;
+&lt;p&gt;As mentioned, the malloc-lab includes an autograder that is used to inspect the behavior of the memory allocator in order to measure its correctness and performance. It scores the allocator on three metrics:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Correctness: a faulty allocator gets 0 points.&lt;/li&gt;
+&lt;li&gt;Utilization: How much memory is in use vs how much memory was requested (0 points for 0%, 60 points for 100%).&lt;/li&gt;
+&lt;li&gt;Throughput: How fast is my memory allocator compared to libc (40 points, if it&#39;s at least as fast).&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;By default, the autograder is configured to compare the throughput of my allocator against a hardcoded value of 600Kops/sec (where each &amp;quot;op&amp;quot; represents a call to malloc, free, and realloc). This is a comically low number on a modern machine. Luckily a commandline option to measure the performance of libc malloc on my own machine, which comes out to ~30,000Kops/sec, which is the value that I will use.&lt;/p&gt;
+&lt;h2 id=&quot;implicit-free-list-the-textbook-implementation&quot;&gt;Implicit free-list - the textbook implementation&lt;/h2&gt;
+&lt;p&gt;The first implementation is a simple implicit free-list implementation that is mostly copied over from the &lt;a href=&quot;https://csapp.cs.cmu.edu/&quot;&gt;CS:APP&lt;/a&gt; textbook, with all the macros replaced with inline functions and constexpr values. As a result, this section will mostly be a retread of that section in the textbook.&lt;/p&gt;
+&lt;p&gt;Each block of memory contains a header and a footer with the payload in the middle.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://0x1eaf.dev/blog/malloc/memory-block.png&quot; alt=&quot;Diagram of a memory block including header, footer, and payload&quot;&gt;&lt;/p&gt;
+&lt;p&gt;The header and the footer both encode the size of their block, thus implicitly linking each block together via simple pointer arithmetic starting from the base of the first block of memory.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://0x1eaf.dev/blog/malloc/implicit-free.png&quot; alt=&quot;Diagram showcasing memory blocks linked together by their size&quot;&gt;&lt;/p&gt;
+&lt;p&gt;Due to alignment requirements, each block of memory has to start at an address that is a multiple of either 4 or 8 (depending on whether it&#39;s a 32- or 64-bit platform). As a result, the 2 or 3 least significant bits are guaranteed to be zero. We can take advantage of that to encode information about the block in the header as well as the size. We will use the least significant bit to encode whether the block has been allocated or not.&lt;/p&gt;
+&lt;p&gt;To implement this, let&#39;s first define some simple utility functions and constants.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;get_size&lt;/code&gt;: returns the size-field from a header or footer.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;get_alloc&lt;/code&gt;: returns the alloc-field from a header or footer.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;put&lt;/code&gt;: assigns a value to a header or footer.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;pack&lt;/code&gt;: returns the bitwise or of two unsigned integers (used to pack
+the size-field with the alloc field).&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;header&lt;/code&gt;: returns the header pointer from a block pointer&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;footer&lt;/code&gt;: returns a footer pointer from a block pointer&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;next_block_pointer&lt;/code&gt;: returns the next block pointer from the current
+one.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;prev_block_pointer&lt;/code&gt;: returns the previous block pointer from the
+current one.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;From this we can start constructing our allocator. We start with the init function.&lt;/p&gt;
+&lt;pre class=&quot;language-c&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-c&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;mm_init&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;heap_listp &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;mem_sbrk&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token number&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt; w_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;// padding&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;heap_listp&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;token comment&quot;&gt;//prologue headers&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;heap_listp &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; w_size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;d_size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;heap_listp &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token number&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt; w_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;d_size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;token comment&quot;&gt;//epilogue header&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;//this gets overwritten when the heap is extended&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;heap_listp &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token number&quot;&gt;3&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt; w_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;token comment&quot;&gt;//set the base of the heap to be at the prologue&lt;/span&gt;
+    heap_listp &lt;span class=&quot;token operator&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token number&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt; w_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;extend_heap&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;chunk_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;token constant&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We create an initial heap with a total of 4 32-bit words. The first word is padding to keep the heap aligned to 8 bytes, while the prologue headers create an &amp;quot;allocated&amp;quot; block that points to the epilogue block which terminates the list. At this point, the heap is ready to use, however, with no free blocks, it&#39;s perhaps not the most useful heap in the world, so let&#39;s extend it.&lt;/p&gt;
+&lt;pre class=&quot;language-c&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-c&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;extend_heap&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;//align the size to 8 bytes&lt;/span&gt;
+    size &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0x7&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;long&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;mem_sbrk&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;token constant&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;//create the new free block&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;//overwriting the previous epilogue&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;footer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;token comment&quot;&gt;//create new epilogue&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;next_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;coalesce&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We overwrite the epilogue with a new header specifying a free block of the size of the extension. Because it&#39;s not unlikely that this new free block comes after another free block, we also choose to coalesce it, that is, combine any neighboring free blocks into one single block.&lt;/p&gt;
+&lt;pre class=&quot;language-c&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-c&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;coalesce&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;// Is the previous block allocated?&lt;/span&gt;
+    &lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; prev_alloc &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;get_alloc&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;footer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;prev_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;// Is the next block allocated?&lt;/span&gt;
+    &lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; next_alloc &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;get_alloc&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;next_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; size &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;get_size&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;prev_alloc &lt;span class=&quot;token operator&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; next_alloc&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;token comment&quot;&gt;/*
+         * Case 1:
+         * No neighbouring block is free. Do not coalesce.
+         * Return the same pointer
+         */&lt;/span&gt;
+        &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; bp&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;prev_alloc &lt;span class=&quot;token operator&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;!&lt;/span&gt;next_alloc&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;token comment&quot;&gt;/*
+         * Case 2:
+         * The preceding block is not free, but the succeeding
+         * one is. Add the size of that block to the current size,
+         * encode it in the header of the current block, and return
+         * its pointer.
+         */&lt;/span&gt;
+        size &lt;span class=&quot;token operator&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;get_size&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;next_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;footer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;!&lt;/span&gt;prev_alloc &lt;span class=&quot;token operator&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; next_alloc&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;token comment&quot;&gt;/*
+         * Case 3:
+         * The preceding block is free, but the succeeding
+         * block is not. Add the size of the the preceeding block
+         * to the size, encode it in the header of the preceeding block
+         * and return a pointer to that block.
+         */&lt;/span&gt;
+        size &lt;span class=&quot;token operator&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;get_size&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;footer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;prev_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;footer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;prev_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        bp &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;prev_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;token comment&quot;&gt;/*
+         * Case 4:
+         * Both neighboring blocks are free. Add
+         * the sizes of all three blocks together and encode
+         * it in the header of the preceeding block. Return
+         * a pointer to that block.
+         */&lt;/span&gt;
+        size &lt;span class=&quot;token operator&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;get_size&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;footer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;prev_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt;
+                &lt;span class=&quot;token function&quot;&gt;get_size&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;next_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;prev_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;footer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;next_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        bp &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;prev_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; bp&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now let&#39;s look at how we actually allocate memory.&lt;/p&gt;
+&lt;pre class=&quot;language-c&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-c&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;mm_malloc&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; adj_size&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; ext_size&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;token comment&quot;&gt;// 0 is not a valid size.&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size &lt;span class=&quot;token operator&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;token constant&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;token comment&quot;&gt;// Calculate the effective size of the block.&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;// The block must be at least the size two headers&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;// plus and an 8 byte word.&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;// The total payload will be at least 8 bytes larger than&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;// the requested size to acommodate the header and the footer&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size &lt;span class=&quot;token operator&quot;&gt;&amp;lt;=&lt;/span&gt; d_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        adj_size &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt; d_size&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        adj_size &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; d_size &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;d_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;d_size &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;/&lt;/span&gt; d_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;token comment&quot;&gt;// Find a block of memory to satisfy the request.&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;find_fit&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;adj_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;token constant&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;token comment&quot;&gt;//Allocate the block&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;place&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; adj_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; bp&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+
+    &lt;span class=&quot;token comment&quot;&gt;//If no block is found, extend the heap. If extending the heap&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;//fails, the allocation fails&lt;/span&gt;
+    ext_size &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;max&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;adj_size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; chunk_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;extend_heap&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;ext_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;token constant&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;token constant&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;//Allocate to the new block.&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;//Since we extended the heap by at least the amount&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;//needed to satisfy the request, it is a guaranteed fit.&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;place&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; adj_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; bp&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now is a good time to talk about fit-policies. There are many different strategies to take when it comes to finding an appropriate block of memory to allocate (a fit). There are three popular ones:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;First fit&lt;/strong&gt;: Search the whole list from the beginning of the free-list. Select the first available block that can satisfy the request.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Next fit&lt;/strong&gt;: Like first fit, but instead of starting from the beginning, start from where the last search left off.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Best fit&lt;/strong&gt;: Search the entire free-list and select the block that is closest in size to the requested size. Short-circuit on an exact match.
+On the surface, this looks like a simple trade-off between throughput and utilization. Pick first fit for throughput, and best-fit for utilization. It is not so simple, however. The issue with a best-fit policy is that, paradoxically, a fit can be &lt;em&gt;too good&lt;/em&gt; without being &lt;em&gt;perfect,&lt;/em&gt; depending on the allocator&#39;s splitting policy. As a result, the allocator may split off many small blocks of memory, that are too small to satisfy any request, and all but contribute to fragmentation. For this allocator, we choose a first-fit policy because it is the simplest.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;pre class=&quot;language-c&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-c&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;find_fit&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;bp &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; heap_listp&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+         &lt;span class=&quot;token function&quot;&gt;get_size&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;&gt;&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+         bp &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;next_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;!&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;get_alloc&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size &lt;span class=&quot;token operator&quot;&gt;&amp;lt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;get_size&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; bp&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;token constant&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This one is very simple. Just iterate through each block on the list. If a block is not allocated, and its size is large enough, allocate it. If no block is found, return &lt;code&gt;NULL&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Next comes placement.&lt;/p&gt;
+&lt;pre class=&quot;language-c&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-c&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;place&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; csize &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;get_size&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;//if the split block is at least as large&lt;/span&gt;
+    &lt;span class=&quot;token comment&quot;&gt;//as the minimum block size&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;csize &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt; size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;&gt;=&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token number&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt; d_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;token comment&quot;&gt;//split&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;footer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        bp &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;next_block_pointer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;csize &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt; size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;footer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;csize &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt; size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;token comment&quot;&gt;//else do not split and simply mark as allocated&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;csize&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+        &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;footer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;csize&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;First, we have to decide on whether or not to split the block in two. For this implementation we simply check, if the split block would be at least large enough to hold the minimum block size, and if it is, split it.&lt;/p&gt;
+&lt;p&gt;By setting the alloc-bit to one, we have marked it as allocated, and the malloc-function can safely return a pointer to the block.&lt;/p&gt;
+&lt;p&gt;Freeing memory in this kind of allocator is very simple:&lt;/p&gt;
+&lt;pre class=&quot;language-c&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-c&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;mm_free&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; size &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;get_size&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;put&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;footer&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;coalesce&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Just mark the block as free and coalesce.&lt;/p&gt;
+&lt;p&gt;Finally we have &lt;code&gt;realloc&lt;/code&gt;. This one is actually just the default implementation included in the lab:&lt;/p&gt;
+&lt;pre class=&quot;language-c&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-c&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;mm_realloc&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;bp&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;oldptr &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; bp&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;newptr&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token class-name&quot;&gt;size_t&lt;/span&gt; copy_size&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+
+    newptr &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;mm_malloc&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;newptr &lt;span class=&quot;token operator&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;token constant&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;token constant&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    copy_size &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;get_size&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;oldptr&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;-&lt;/span&gt; d_size&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;size &lt;span class=&quot;token operator&quot;&gt;&amp;lt;&lt;/span&gt; copy_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;
+        copy_size &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; size&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;memcpy&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;newptr&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; oldptr&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; copy_size&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token function&quot;&gt;mm_free&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;oldptr&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;token keyword&quot;&gt;return&lt;/span&gt; newptr&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This implementation simply makes a call to &lt;code&gt;malloc&lt;/code&gt; for a block of the new size, uses &lt;code&gt;memcpy&lt;/code&gt; to copy the data of the old block over to the new block, and frees the old block.&lt;/p&gt;
+&lt;p&gt;With that, we have a fully functional memory allocator. Let&#39;s see how it performs.&lt;/p&gt;
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
+trace  valid  util     ops      secs  Kops/sec
+ 0       yes   99%    5694  0.003271  1741
+ 1       yes   98%    5848  0.003519  1662
+ 2       yes   99%    6648  0.004608  1443
+ 3       yes   99%    5380  0.003373  1595
+ 4       yes   20%   14400  0.000059242424
+ 5       yes   91%    4800  0.004205  1142
+ 6       yes   92%    4800  0.003832  1252
+ 7       yes   55%   12000  0.067335   178
+ 8       yes   51%   24000  0.110799   217
+ 9       yes   21%   14401  0.025789   558
+10       yes   23%   14401  0.000938 15348
+Total          68%  112372  0.227729   493
+
+Perf index = 41 (util) + 1 (thru) = 41/100&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;While memory utilization isn&#39;t disastrous, the throughput here is &lt;em&gt;abysmal&lt;/em&gt;, coming in at around ~1.5% of the throughput of libc malloc. So why is that?&lt;/p&gt;
+&lt;p&gt;Freeing is obviously very fast, both the free and coalesce operations are constant-time involving only addition and bit-flipping.&lt;/p&gt;
+&lt;p&gt;Allocation on the other hand involves a linear search, not just of the free list (there is no free-list to be quite honest), but of the entire implicit list of every block of memory known to the allocator. Not only is this slow by default, but it will get slower and slower as the heap grows.&lt;/p&gt;
+&lt;p&gt;We can do better.&lt;/p&gt;
+&lt;h2 id=&quot;second-iteration-explicit-free-list&quot;&gt;Second iteration: explicit free-list&lt;/h2&gt;
+&lt;p&gt;Since free-blocks are, well, free, we&#39;re allowed to put any data we want in them. Thus we can make our free-list data structure explicit by including pointers to the previous and next free memory blocks, creating a doubly-linked list.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://0x1eaf.dev/blog/malloc/explicit-free.png&quot; alt=&quot;Diagram showcasing memory blocks linked together in a doubly-linked
+list&quot;&gt;
+(For simplicity&#39;s sake, the free-list has been rendered with double-sided arrows, but in practice, every pointer is the address of the base of the block that it points to. So both &lt;code&gt;next&lt;/code&gt; and &lt;code&gt;previous&lt;/code&gt; point to the &lt;code&gt;previous&lt;/code&gt;-field of the next and previous node in the list respectively.)&lt;/p&gt;
+&lt;p&gt;As illustrated, one consequence of this is that the free-list is no longer ordered by continuously by their address. There are explicit free-list implementations that are address-ordered (and literature suggests that they are good at reducing fragmentation), however, we are only going to consider two policies for our allocator:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;First in, first out&lt;/strong&gt; (FIFO): Each new free block is appended to the tail of the list. The free-list is searched from the head, so the least recently freed block that fits will be allocated for a given request.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Last in, first out&lt;/strong&gt; (LIFO): Each new free block is prepended to the head of the list. The free-list is search from the head, so the most recently freed block that fits will be allocated for a given request.
+In either case it is a standard implementation of a doubly-linked list,
+so I won&#39;t bore you with the details.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Now, it turns out that we only have to make some pretty minor changes to our existing code in order to implement the explicit free-list. Let&#39;s look at &lt;code&gt;mm_malloc&lt;/code&gt;:&lt;/p&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;void *mm_malloc(size_t size) {
+&lt;/span&gt;...
+&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    if (size &amp;lt;= d_size) {
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        adj_size = 2 * d_size;
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    if (size &amp;lt;= 3 * w_size) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        adj_size = min_block_size;
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    } else {
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        adj_size = d_size * ((size + (d_size) + (d_size - 1)) / d_size);
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        adj_size = ((w_size + size - 1) | 0x7) + 1; // size + header
+&lt;/span&gt;...&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Because each free block now needs to hold two pointers, a header, and a footer, the minimum block size has to be increased in order to accommodate one. A constant has been introduced to encode this value. I also decided to change the way that the alignment operation is implemented.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;extend_heap&lt;/code&gt; and &lt;code&gt;mm_free&lt;/code&gt; just need to insert the new free block into the free-list.&lt;/p&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;static void *extend_heap(size_t size) {
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    size = ((size - 1) | 0x7) + 1;
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    char *bp;
+&lt;/span&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    if ((long)(bp = mem_sbrk(size)) == -1)
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        return NULL;
+&lt;/span&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    put(header(bp), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    put(footer(bp), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    put(header(next_block_pointer(bp)), pack(0, 1));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    bp = coalesce(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    insert_node((free_node_t *)bp);
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    return coalesce(bp);
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    return bp;
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;void mm_free(void *bp) {
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    size_t size = get_size(header(bp));
+&lt;/span&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    put(header(bp), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    put(footer(bp), pack(size, 0));
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    coalesce(bp);
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    bp = coalesce(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    insert_node(bp);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;coalesce&lt;/code&gt; is now responsible for removing consolidated blocks from the free list.&lt;/p&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;static void *coalesce(char *bp) {
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    size_t prev_alloc = get_alloc(footer(prev_block_pointer(bp)));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    size_t next_alloc = get_alloc(header(next_block_pointer(bp)));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    size_t size = get_size(header(bp));
+&lt;/span&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    if (prev_alloc &amp;amp;&amp;amp; next_alloc)
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        return bp;
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    else if (prev_alloc &amp;amp;&amp;amp; !next_alloc) {
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        size += get_size(header(next_block_pointer(bp)));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        char *next_bp = next_block_pointer(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        size += get_size(header(next_bp));
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(header(bp), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(footer(bp), pack(size, 0));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *neighbour_node = (free_node_t *)next_bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node(neighbour_node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    } else if (!prev_alloc &amp;amp;&amp;amp; next_alloc) {
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        size += get_size(footer(prev_block_pointer(bp)));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        char *prev_bp = prev_block_pointer(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        size += get_size(footer(prev_bp));
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *prev_node = (free_node_t *)prev_bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node(prev_node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(footer(bp), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(header(prev_block_pointer(bp)), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        bp = prev_block_pointer(bp);
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    } else {
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        size += get_size(footer(prev_block_pointer(bp))) +
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;                get_size(header(next_block_pointer(bp)));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        char *next_bp = next_block_pointer(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        char *prev_bp = prev_block_pointer(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        size += get_size(footer(prev_bp))
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;            + get_size(header(next_bp));
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *prev_node = (free_node_t *)prev_bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node(prev_node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(header(prev_block_pointer(bp)), pack(size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(footer(next_block_pointer(bp)), pack(size, 0));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *next_node = (free_node_t *)next_bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node(next_node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        bp = prev_block_pointer(bp);
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    }
+&lt;/span&gt;
+&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    return bp;
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;place&lt;/code&gt; removes allocated blocks from the free-list, and inserts newly split blocks back into it.&lt;/p&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;static void place(void *bp, size_t size) {
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    size_t csize = get_size(header(bp));
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    if ((csize - size) &gt;= (2 * d_size)) {
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    if ((csize - size) &gt;= min_block_size) {
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(header(bp), pack(size, 1));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(footer(bp), pack(size, 1));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *node = (free_node_t *)bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node(node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        bp = next_block_pointer(bp);
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(header(bp), pack(csize - size, 0));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(footer(bp), pack(csize - size, 0));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *new_node = (free_node_t *)bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        insert_node(new_node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    } else {
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(header(bp), pack(csize, 1));
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        put(footer(bp), pack(csize, 1));
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        free_node_t *node = (free_node_t *)bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node(node);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    }
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;An important lesson that I keep having to relearn is &lt;a href=&quot;http://www.laputan.org/mud/mud.html#KeepItWorking&quot;&gt;keep it working&lt;/a&gt;.  You can implement all the supporting code for the explicit-free list without touching the implicit free-list code at all. None of the code-changes mentioned so far have actually changed any of the behavior of the code at all except for maintaining this, currently inconsequential, data structure, and increasing the minimum block size by 8 bytes. We&#39;re still running a working implicit free-list.&lt;/p&gt;
+&lt;p&gt;The final code change is to then switch the &lt;code&gt;find_fit&lt;/code&gt; function from traversing the list by block size to traversing the linked-list data structure we just implemented.&lt;/p&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;static void *find_fit(size_t size) {
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    char *bp;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    for (bp = heap_listp;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;         get_size(header(bp)) &gt; 0;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;         bp = next_block_pointer(bp)
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    ) {
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        if (!get_alloc(header(bp))
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;            &amp;amp;&amp;amp; (size &amp;lt;= get_size(header(bp)))
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        ) {
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;            heapcheck(__LINE__);
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;            return bp;
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    for (free_node_t *node = free_list;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;         node;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;         node = node-&gt;next
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    ) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        if (size &amp;lt;= get_size(header((char *)node))) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;            return node;
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        }
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    }
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;In reality, I didn&#39;t actually do it like that. I made many ill-considered changes that left me with a hard-to-debug broken allocator, and I ran &lt;code&gt;git restore mm.c&lt;/code&gt; at least a few times. So let that be a lesson: keep it working.&lt;/p&gt;
+&lt;p&gt;With the explicit free-list done, let&#39;s run the autograder and measure our performance:
+&lt;strong&gt;LIFO&lt;/strong&gt;:&lt;/p&gt;
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
+trace  valid  util     ops      secs  Kops/sec
+ 0       yes   89%    5694  0.000093 61160
+ 1       yes   91%    5848  0.000058100309
+ 2       yes   94%    6648  0.000160 41524
+ 3       yes   97%    5380  0.000125 42971
+ 4       yes   66%   14400  0.000065221880
+ 5       yes   89%    4800  0.000305 15722
+ 6       yes   88%    4800  0.000307 15615
+ 7       yes   55%   12000  0.000988 12143
+ 8       yes   51%   24000  0.001298 18489
+ 9       yes   27%   14401  0.025642   562
+10       yes   30%   14401  0.001027 14020
+Total          71%  112372  0.030070  3737
+
+Perf index = 42 (util) + 5 (thru) = 47/100&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;FIFO&lt;/strong&gt;:&lt;/p&gt;
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
+trace  valid  util     ops      secs  Kops/sec
+ 0       yes   98%    5694  0.000062 92435
+ 1       yes   96%    5848  0.000065 90667
+ 2       yes   98%    6648  0.000073 90449
+ 3       yes   99%    5380  0.000051106324
+ 4       yes   66%   14400  0.000064224299
+ 5       yes   92%    4800  0.000741  6474
+ 6       yes   91%    4800  0.000664  7225
+ 7       yes   55%   12000  0.007343  1634
+ 8       yes   51%   24000  0.034446   697
+ 9       yes   27%   14401  0.026885   536
+10       yes   30%   14401  0.001033 13945
+Total          73%  112372  0.071427  1573
+
+Perf index = 44 (util) + 2 (thru) = 46/100&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now, while the dramatic difference between the two is somewhat surprising (the fact that the slowest traces are the ones that do the most calls to realloc might be part of the story here), I am not at all surpised that the LIFO version comes out ahead, and the reason for that is locality.&lt;/p&gt;
+&lt;p&gt;Locality is simply the idea that memory that has been accessed once, will most likely be accessed again, and when one block of memory gets accessed, its neighboring blocks will most likely be accessed too. Thus, code that exhibits high locality, will access the same memory frequently, and access contiguous blocks of memory in sequence. This has performance implications due the way the CPU cache works. Simply put code with good locality will have fewer cache misses, resulting in faster memory access.&lt;/p&gt;
+&lt;p&gt;Arguably, blocks of memory that have been &lt;em&gt;freed&lt;/em&gt; more recently, are also more likely to have been &lt;em&gt;used&lt;/em&gt; more recently. As a result, they then more likely to be present in lower (faster) levels of cache memory. Given that LIFO allocates the most recently freed blocks, and FIFO allocates the least recently freed blocks, it would come as a surprise, if LIFO interacts better with the CPU caches and is faster as a result.&lt;/p&gt;
+&lt;p&gt;This is still a linear search, however. A linear search on a smaller n, but linear nonetheless. We can do better.&lt;/p&gt;
+&lt;h2 id=&quot;but-first-its-time-to-stop-cheating&quot;&gt;But first, it&#39;s time to stop cheating&lt;/h2&gt;
+&lt;p&gt;Unfortunately there&#39;s a fundamental problem with treating this as a portable, general-purpose allocator, and that is that the header data has been encoded in an &lt;code&gt;unsigned int&lt;/code&gt;, which is a 32-bit value on x86 and x64. This is an artifact from following the textbook-implementation from earlier. While this would be totally ok if we restrict ourselves to making an allocator for a 32-bit system, it feels a bit like cheating, because it allows us to pack the headers more closely.&lt;/p&gt;
+&lt;p&gt;For the autograder, this is no problem, because the autograder&#39;s heap is limited to 20MB, a size that fits well within a 32-bit unsigned integer, and thus it has not caused any problems so far. However, this is supposed to be a general-purpose allocator, and it&#39;s honestly an interesting exercise to make it work the same on both 32-bit and 64-bit architectures.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;size_t&lt;/code&gt; is an unsigned integer data type in C used to represent the size of an object. Since an object, in theory, could be as large as the entire virtual address space, &lt;code&gt;size_t&lt;/code&gt; needs to be able to accommodate a size that is at least as large (at least, I assume this to be the case, I haven&#39;t actually looked that up). As such, &lt;code&gt;size_t&lt;/code&gt; is 4 bytes on x86, and 8 bytes on x64. From this point onward, block metadata is represented using a &lt;code&gt;size_t&lt;/code&gt; instead of an &lt;code&gt;unsigned int&lt;/code&gt;.&lt;/p&gt;
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
+trace  valid  util     ops      secs  Kops
+ 0       yes   89%    5694  0.000114 49904
+ 1       yes   92%    5848  0.000070 83782
+ 2       yes   94%    6648  0.000172 38696
+ 3       yes   96%    5380  0.000122 43954
+ 4       yes   66%   14400  0.000084172249
+ 5       yes   86%    4800  0.000301 15942
+ 6       yes   85%    4800  0.000278 17266
+ 7       yes   51%   12000  0.003027  3964
+ 8       yes   50%   24000  0.001738 13811
+ 9       yes   26%   14401  0.026118   551
+10       yes   38%   14401  0.000971 14831
+Total          70%  112372  0.032995  3406
+
+Perf index = 42 (util) + 5 (thru) = 47/100&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Only a minor performance hit.&lt;/p&gt;
+&lt;p&gt;A small optimization that was done in conjunction with this change was removing the footer from allocated blocks, and encoding whether the previous block was allocated in a bit-field in the header. The advantage of doing this is arguably pretty small.&lt;/p&gt;
+&lt;h2 id=&quot;third-iteration-segregated-free-list&quot;&gt;Third iteration: segregated free-list&lt;/h2&gt;
+&lt;p&gt;Let&#39;s finally address the linear search of the free-list. What if, instead of searching the entire free-list for a block of appropriate size, we eliminate every block that is guaranteed to be too small, and only search blocks that are either of similar size or larger. This is where the segregated free-list comes in.&lt;/p&gt;
+&lt;p&gt;The idea is that instead of having just one free-list, we have an array of free-lists, where each list has its own size-class.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://0x1eaf.dev/blog/malloc/segregated-free.png&quot; alt=&quot;Diagram showcasing a segregated free-list&quot;&gt;&lt;/p&gt;
+&lt;p&gt;By having each size-class be a power of two, we can allocate an array of &lt;code&gt;w_bits&lt;/code&gt; pointers to a free list, where &lt;code&gt;w_bits&lt;/code&gt; is the number of bits in a &lt;code&gt;size_t&lt;/code&gt;. This way, we can calculate the size class of a given node or requested size by taking the floored base 2 logarithm of the given size. Given that the minimum block size is 4, the log base 2 of which is 2, we could in theory eliminate size class 0 and 1 from the array, but we only eliminate size class 0.&lt;/p&gt;
+&lt;p&gt;All we have to do to our free-list data structure is take the log base 2
+of the size to calculate the index into the free-list array, and then insert the node into the
+correct free-list like before.&lt;/p&gt;
+&lt;p&gt;Then all we need to do is allocate some extra space on the heap for the array of free-lists and initialize it to 0 in &lt;code&gt;mm_init&lt;/code&gt; and update &lt;code&gt;find_fit&lt;/code&gt;.&lt;/p&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;static void *find_fit(size_t size) {
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    for (free_node_t *node = free_list;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;         node;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;         node = node-&gt;next
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    ) {
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        if (size &amp;lt;= get_size(header((char *)node))) {
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;            return node;
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    size_t i = log2_of(size) - 1;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    while (i &amp;lt; w_bits) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        for (free_node_t *node = free_lists[i];
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;             node;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;             node = node-&gt;next
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        ) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;            if (size &amp;lt;= get_size(header((char *)node))) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;                return node;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;            }
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        }
+&lt;/span&gt;&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        i++;
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    }
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    return NULL;
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;(yes, the outer loop could have been a for-loop too)&lt;/p&gt;
+&lt;p&gt;And that&#39;s all there is to it. Let&#39;s see how it compares.&lt;/p&gt;
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
+trace  valid  util     ops      secs  Kops
+ 0       yes   98%    5694  0.000098 57925
+ 1       yes   97%    5848  0.000111 52590
+ 2       yes   99%    6648  0.000126 52846
+ 3       yes   99%    5380  0.000099 54343
+ 4       yes   65%   14400  0.000198 72691
+ 5       yes   92%    4800  0.000180 26652
+ 6       yes   90%    4800  0.000174 27602
+ 7       yes   55%   12000  0.000163 73620
+ 8       yes   50%   24000  0.000303 79156
+ 9       yes   25%   14401  0.026707   539
+10       yes   16%   14401  0.001766  8156
+Total          71%  112372  0.029926  3755
+
+Perf index = 43 (util) + 5 (thru) = 48/100&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;At a glance, that looks like a pretty minor improvement, but look at trace 9. What&#39;s going on with that?&lt;/p&gt;
+&lt;h2 id=&quot;a-second-look-at-realloc&quot;&gt;A second look at &lt;code&gt;realloc&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;Well, trace 9 is called &lt;code&gt;realloc-bal.rep&lt;/code&gt; which should give you a hint. Recall that we haven&#39;t touched &lt;code&gt;mm_realloc&lt;/code&gt; &lt;em&gt;at all&lt;/em&gt; so far, and it is a guaranteed call to &lt;code&gt;memcpy&lt;/code&gt;, which certainly &lt;em&gt;sounds&lt;/em&gt; expensive. So let&#39;s try to optimize that.&lt;/p&gt;
+&lt;p&gt;The requirements state that we only need to return &lt;em&gt;a&lt;/em&gt; pointer to block of memory of the requested size with the old data available. It doesn&#39;t say it has to be a &lt;em&gt;different&lt;/em&gt; pointer, and if we can return the &lt;em&gt;same&lt;/em&gt; pointer, than we don&#39;t have to &lt;code&gt;memcpy&lt;/code&gt;, not to mention the associated calls to &lt;code&gt;mm_malloc&lt;/code&gt; and &lt;code&gt;mm_free&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;There are two cases we have to care about:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;The requested size + header is equal to or less than the currently allocated block size.&lt;/li&gt;
+&lt;li&gt;The requested size + header is larger than the currently allocated block size.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Case 1 is trivial. We simply return the same pointer and do nothing. We could try to split to create a free block of memory, but that appeared to make utilization &lt;em&gt;worse&lt;/em&gt;, not &lt;em&gt;better&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;In case 2, we can avoid the reallocation and copying by coalescing with the next block of memory on the condition that it is not already allocated.&lt;/p&gt;
+&lt;pre class=&quot;language-diff&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-diff&quot;&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;void *mm_realloc(void *bp, size_t size) {
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    void *oldptr = bp;
+&lt;/span&gt;
+&lt;span class=&quot;token inserted-sign inserted&quot;&gt;&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    size_t block_size = get_size(header(oldptr));
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    if (size + w_size &amp;lt; block_size) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        return oldptr;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    } else if (size &amp;lt; block_size) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        size = block_size;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    }
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    char *next_bp = next_block_pointer(bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    size_t next_alloc = get_alloc(header(next_bp));
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    size_t next_size = get_size(header(next_bp));
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    if (!next_alloc &amp;amp;&amp;amp; size + w_size &amp;lt;= block_size + next_size) {
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        block_size += next_size;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        put(header(bp), pack(block_size, 1));
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        remove_node((free_node_t *)next_bp);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        set_prev_alloc(header(next_block_pointer(bp)), 1);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        heapcheck(__LINE__);
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;        return bp;
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;    }
+&lt;span class=&quot;token prefix inserted&quot;&gt;+&lt;/span&gt;
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    void *newptr = mm_malloc(size);
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    if (newptr == NULL)
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;        return NULL;
+&lt;/span&gt;&lt;span class=&quot;token deleted-sign deleted&quot;&gt;&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    size_t copy_size = get_size(header(oldptr)) - w_size;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    if (size &amp;lt; copy_size)
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;        copy_size = size;
+&lt;span class=&quot;token prefix deleted&quot;&gt;-&lt;/span&gt;    memcpy(newptr, oldptr, copy_size);
+&lt;/span&gt;&lt;span class=&quot;token unchanged&quot;&gt;&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    memcpy(newptr, oldptr, block_size);
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    mm_free(oldptr);
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;    return newptr;
+&lt;span class=&quot;token prefix unchanged&quot;&gt; &lt;/span&gt;}
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Let&#39;s see how that performs.&lt;/p&gt;
+&lt;pre class=&quot;language-txt&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-txt&quot;&gt;Results for mm malloc:
+trace  valid  util     ops      secs  Kops
+ 0       yes   98%    5694  0.000121 47136
+ 1       yes   97%    5848  0.000123 47622
+ 2       yes   99%    6648  0.000148 44858
+ 3       yes   99%    5380  0.000125 43213
+ 4       yes   64%   14400  0.000157 91778
+ 5       yes   92%    4800  0.000199 24169
+ 6       yes   90%    4800  0.000194 24793
+ 7       yes   55%   12000  0.000196 61224
+ 8       yes   50%   24000  0.000339 70734
+ 9       yes   46%   14401  0.000165 87120
+10       yes   66%   14401  0.000123117463
+Total          78%  112372  0.001889 59500
+
+Perf index = 47 (util) + 40 (thru) = 87/100&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Ok then. I appear to have made a malloc that is twice as fast as libc-malloc.&lt;/p&gt;
+&lt;p&gt;But that&#39;s not really a fair comparison. For one, this implementation is evaluated against a small set of mostly synthetic allocation patterns, which is not necessarily representative of the kinds of allocation patterns a real-world allocator would have to face.&lt;/p&gt;
+&lt;p&gt;Secondly, my allocator is not thread-safe. If a multi-threaded program were to use my allocator from concurrent threads, disastrous things would likely happen.&lt;/p&gt;
+&lt;p&gt;And finally, libc-malloc likely does a lot of work to maximize memory utilization that my allocator doesn&#39;t do, especially to guard against what one might call pathological allocation patterns. You may notice that while the average memory-utilization of my own allocator is &lt;em&gt;ok&lt;/em&gt;, the utilization shown in some of these traces is downright &lt;em&gt;catastrophic&lt;/em&gt;. 50% utilization is simply not ok, unless you&#39;re allocating single &lt;code&gt;size_t&lt;/code&gt;&#39;s almost exclusively.&lt;/p&gt;
+&lt;h2 id=&quot;so-what-did-we-learn&quot;&gt;So what did we learn&lt;/h2&gt;
+&lt;p&gt;Arguably the purpose of this exercise is not for me to write my own general-purpose allocator for a general-purpose widely used operating system. I can&#39;t write a better allocator than libc, and I don&#39;t need to.&lt;/p&gt;
+&lt;p&gt;However, that doesn&#39;t mean it was at all pointless. There are many reasons one might want to learn how to reinvent the wheel. Here are a few:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;Learning how to implement a simplified version of malloc, improves my understanding of how to use the malloc that is installed on my operating system&lt;/strong&gt;. This goes for all things programming in my opinion. If you learn how to build the thing, even if it&#39;s a toy version of the thing, you get better at using the real thing. You get a deeper understanding of what its capabilities are, what kinds of things can go wrong, and how to mitigate them.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Sometimes you might actually find yourself needing to write your own memory allocator.&lt;/strong&gt; This is the case more so in the embedded world than not, but it does also apply to userspace applications running in OS&#39;es like Linux. A common use case that is brought up in the textbook, for instance, is graph data structures, where the program might request a large block of memory from malloc, and then use its own purpose-built allocator to manage allocations within that block.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;I gain a deeper understanding of the security implications of memory bugs.&lt;/strong&gt; It is a well-known fact that memory bugs make up one of the largest classes of security vulnerabilities in the wild. Many of these are related to overflowing string buffers, but a large amount is also related to use-after-free bugs and double-free bugs. Now that I know how memory allocation works under the hood, I have a much stronger mental model of &lt;em&gt;why&lt;/em&gt; these things can be security vulnerabilities, and I think that&#39;s important too, if I want to be someone writing safe software.&lt;/li&gt;
+&lt;/ol&gt;
+</content>
+  </entry>
+  <entry>
+    <title>we do a little data wrangling</title>
+    <link href="https://0x1eaf.dev/blog/data-wrangling/" />
+    <updated>2025-01-17T16:53:07Z</updated>
+    <id>https://0x1eaf.dev/blog/data-wrangling/</id>
+    <content type="html">&lt;p&gt;I wanted to do some rudimentary statistics on the Swedish tech job market, both to test a few hypotheses of mine, and also to get informed about what subject areas I want to focus on in terms of employability. It&#39;s no secret that I want a new job doing something else than what I&#39;m doing at my current job, so as much as I want to study for the sake of learning things that make me excited, I also need to stay cognizant of what job qualifications are in demand.&lt;/p&gt;
+&lt;p&gt;Luckily, the Swedish Employment publishes an open web API which gives access to all job adverts that they have ever hosted on their current platform. So let&#39;s get all job adverts that were posted since the beginning of 2024:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ &lt;span class=&quot;token function&quot;&gt;curl&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-H&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Content-type: application/json&quot;&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;&#92;&lt;/span&gt;
+&lt;span class=&quot;token string&quot;&gt;&#39;https://jobstream.api.jobtechdev.se/stream?date=2024-01-01T00:00:00&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;&gt;&lt;/span&gt; jobs.json
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+&lt;span class=&quot;token number&quot;&gt;100&lt;/span&gt;  682M    &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;  682M    &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;     &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;  4473k      &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt; --:--:--  &lt;span class=&quot;token number&quot;&gt;0&lt;/span&gt;:02:36 --:--:-- 5017k
+❯&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Awesome.&lt;/p&gt;
+&lt;p&gt;Now, the Linux command line, it turns out, is an &lt;em&gt;excellent&lt;/em&gt; too for wrangling large datasets. Let&#39;s look at the tools we&#39;re gonna use:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;cat&lt;/strong&gt;: simply prints the contents of a file&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;jq&lt;/strong&gt;: format, filter, and transform JSON data.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;sed&lt;/strong&gt;: short for &amp;quot;stream-editor&amp;quot;. Can do various line-by-line transformations using RegEx. We&#39;re just gonna do simple search-replace with it.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;sort&lt;/strong&gt;: it sorts!&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;uniq&lt;/strong&gt;: prints and counts unique lines. Requires sorted data.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;grep&lt;/strong&gt;: extract data with RegEx!&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The data we get is an array of JSON objects. The fields we&#39;re interested in are &lt;code&gt;occupation_group&lt;/code&gt;, which denotes the job category, and &lt;code&gt;description&lt;/code&gt;, which contains the job description. The &lt;code&gt;occupation_group&lt;/code&gt;-field looks like this:&lt;/p&gt;
+&lt;pre class=&quot;language-json&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-json&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;&quot;concept_id&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; string&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;&quot;label&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; string&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;token property&quot;&gt;&quot;legacy_ams_taxonomy_id&quot;&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; int
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;We&#39;re interested in the &lt;code&gt;concept_id&lt;/code&gt; for the label &amp;quot;Mjukvaru- och systemutvecklare m.fl.&amp;quot; (&amp;quot;Software- and system developers etc.&amp;quot;).&lt;/p&gt;
+&lt;p&gt;As a fun little exercise,  let&#39;s find the amount of job ads for each category:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ &lt;span class=&quot;token function&quot;&gt;cat&lt;/span&gt; jobs.json &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+jq &lt;span class=&quot;token string&quot;&gt;&#39;.[].occupation_group | select(.label != null) | .label&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;sort&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;uniq&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-c&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;sort&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-nr&lt;/span&gt;
+   &lt;span class=&quot;token number&quot;&gt;1879&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Mjukvaru- och systemutvecklare m.fl.&quot;&lt;/span&gt;
+   &lt;span class=&quot;token number&quot;&gt;1637&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Grundutbildade sjuksköterskor&quot;&lt;/span&gt;
+   &lt;span class=&quot;token number&quot;&gt;1628&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Personliga assistenter&quot;&lt;/span&gt;
+   &lt;span class=&quot;token number&quot;&gt;1392&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Företagssäljare&quot;&lt;/span&gt;
+    &lt;span class=&quot;token number&quot;&gt;920&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Undersköterskor, hemtjänst, hemsjukvård, äldreboende och habilitering&quot;&lt;/span&gt;
+    &lt;span class=&quot;token number&quot;&gt;915&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Motorfordonsmekaniker och fordonsreparatörer&quot;&lt;/span&gt;
+    &lt;span class=&quot;token punctuation&quot;&gt;..&lt;/span&gt;.&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;So much for the recession in the tech industry, huh.&lt;/p&gt;
+&lt;p&gt;Enough of that, let&#39;s find that ID:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;&lt;span class=&quot;token function&quot;&gt;cat&lt;/span&gt; jobs.json &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+jq &lt;span class=&quot;token string&quot;&gt;&#39;.[].occupation_group | select(.label != null)&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;grep&lt;/span&gt; Mjukvaru &lt;span class=&quot;token parameter variable&quot;&gt;-B2&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-A2&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token string&quot;&gt;&quot;concept_id&quot;&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;DJh5_yyF_hEM&quot;&lt;/span&gt;,
+  &lt;span class=&quot;token string&quot;&gt;&quot;label&quot;&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Mjukvaru- och systemutvecklare m.fl.&quot;&lt;/span&gt;,
+  &lt;span class=&quot;token string&quot;&gt;&quot;legacy_ams_taxonomy_id&quot;&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;2512&quot;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+--
+&lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;token string&quot;&gt;&quot;concept_id&quot;&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;DJh5_yyF_hEM&quot;&lt;/span&gt;,
+  &lt;span class=&quot;token string&quot;&gt;&quot;label&quot;&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;Mjukvaru- och systemutvecklare m.fl.&quot;&lt;/span&gt;,
+  &lt;span class=&quot;token string&quot;&gt;&quot;legacy_ams_taxonomy_id&quot;&lt;/span&gt;&lt;span class=&quot;token builtin class-name&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&quot;2512&quot;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+--
+&lt;span class=&quot;token comment&quot;&gt;#...&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now we can use that ID to filter for software jobs only, and extracting the formatted text of the advert:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;jq &lt;span class=&quot;token string&quot;&gt;&#39;.[] | select(.occupation_group.concept_id == &quot;DJh5_yyF_hEM&quot;) | .description.text_formatted&#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Make it all lowercase for ease of processing keywords:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt; &lt;span class=&quot;token function&quot;&gt;tr&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;[:upper:]&#39;&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;[:lower:]&#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Remove HTML tags and newlines:&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;&lt;span class=&quot;token function&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;s/&#92;&#92;n//g&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-E&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;s/&amp;lt;&#92;/?[a-z]{1,10}&gt;//g&#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Extract all the keywords I&#39;m interested in - programming languages and other qualifications. I use the -P flag to use Perl&#39;s RegEx engine, which enables lookahead and lookbehind qualifiers.&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;&lt;span class=&quot;token function&quot;&gt;grep&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-oP&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;&#92;(?&amp;lt;ǃ&#92;w)((c#)|(c)|(java)|(javascript)|(typescript)|(js)|(ts)|(python)|(linux)|(elixir)|(erlang)|(go)|(c&#92;+&#92;+)|(react)|(angular)|(svelte)|(&#92;.net)|(embedded)|(rust)|(scala)|(clojure)|(kotlin)|(ruby)|(swift)|(golang))(?=[ ,./])&#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Count the occurrence of each keyword&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;&lt;span class=&quot;token function&quot;&gt;sort&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;uniq&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-c&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;sort&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-nr&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Putting it all together&lt;/p&gt;
+&lt;pre class=&quot;language-bash&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-bash&quot;&gt;❯ &lt;span class=&quot;token function&quot;&gt;cat&lt;/span&gt; jobs.json &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+jq &lt;span class=&quot;token string&quot;&gt;&#39;.[] | select(.occupation_group.concept_id == &quot;DJh5_yyF_hEM&quot;) | .description.text_formatted&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;tr&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;[:upper:]&#39;&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;[:lower:]&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;s/&#92;&#92;n//g&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;sed&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-E&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;s/&amp;lt;&#92;/?[a-z]{1,10}&gt;//g&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;grep&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-oP&lt;/span&gt; &lt;span class=&quot;token string&quot;&gt;&#39;(?&amp;lt;!&#92;w)((c#)|(c)|(java)|(javascript)|(typescript)|(js)|(ts)|(python)|(linux)|(elixir)|(erlang)|(go)|(c&#92;+&#92;+)|(react)|(angular)|(svelte)|(&#92;.net)|(embedded)|(rust)|(scala)|(clojure)|(kotlin)|(ruby)|(swift)|(golang))(?=[ ,./])&#39;&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;token function&quot;&gt;sort&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;uniq&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-c&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;sort&lt;/span&gt; &lt;span class=&quot;token parameter variable&quot;&gt;-nr&lt;/span&gt;
+    &lt;span class=&quot;token number&quot;&gt;583&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;java&lt;/span&gt;
+    &lt;span class=&quot;token number&quot;&gt;558&lt;/span&gt; python
+    &lt;span class=&quot;token number&quot;&gt;508&lt;/span&gt; .net
+    &lt;span class=&quot;token number&quot;&gt;487&lt;/span&gt; embedded
+    &lt;span class=&quot;token number&quot;&gt;434&lt;/span&gt; c++
+    &lt;span class=&quot;token number&quot;&gt;411&lt;/span&gt; c&lt;span class=&quot;token comment&quot;&gt;#&lt;/span&gt;
+    &lt;span class=&quot;token number&quot;&gt;339&lt;/span&gt; c
+    &lt;span class=&quot;token number&quot;&gt;327&lt;/span&gt; react
+    &lt;span class=&quot;token number&quot;&gt;311&lt;/span&gt; linux
+    &lt;span class=&quot;token number&quot;&gt;238&lt;/span&gt; javascript
+    &lt;span class=&quot;token number&quot;&gt;217&lt;/span&gt; typescript
+    &lt;span class=&quot;token number&quot;&gt;176&lt;/span&gt; js
+    &lt;span class=&quot;token number&quot;&gt;165&lt;/span&gt; angular
+    &lt;span class=&quot;token number&quot;&gt;107&lt;/span&gt; go
+    &lt;span class=&quot;token number&quot;&gt;104&lt;/span&gt; kotlin
+     &lt;span class=&quot;token number&quot;&gt;64&lt;/span&gt; ts
+     &lt;span class=&quot;token number&quot;&gt;40&lt;/span&gt; swift
+     &lt;span class=&quot;token number&quot;&gt;34&lt;/span&gt; rust
+     &lt;span class=&quot;token number&quot;&gt;34&lt;/span&gt; golang
+     &lt;span class=&quot;token number&quot;&gt;29&lt;/span&gt; scala
+     &lt;span class=&quot;token number&quot;&gt;13&lt;/span&gt; ruby
+      &lt;span class=&quot;token number&quot;&gt;4&lt;/span&gt; svelte
+      &lt;span class=&quot;token number&quot;&gt;4&lt;/span&gt; erlang
+      &lt;span class=&quot;token number&quot;&gt;2&lt;/span&gt; elixir
+      &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt; clojure&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Very interesting. I expected Java to be high, but I honestly thought
+C#/.NET would be higher. Same with the JS/TS + frameworks. Python is
+also highly sought after, which is expected.&lt;/p&gt;
+&lt;p&gt;Now, Go also happens to be a common English word, and given that many of these ads are written in English, the likelyhood of Go being overcounted is very high. I&#39;m surprised to see it rank so low, regardless.&lt;/p&gt;
+&lt;p&gt;What I&#39;m most interested in is the amount of listings that contain the word &amp;quot;embedded&amp;quot;. As mentioned in &lt;a href=&quot;https://0x1eaf.dev/blog/ossu-2024-review/&quot;&gt;a previous blog post&lt;/a&gt;, I&#39;ve gotten quite fond of systems level programming. With the understanding that I&#39;d need to learn some rudimentary electrical engineering, maybe I should take a shot at becoming an embedded developer. It sounds fun, not gonna lie.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>OSSU 2024 In Review</title>
+    <link href="https://0x1eaf.dev/blog/ossu-2024-review/" />
+    <updated>2024-12-28T20:00:00Z</updated>
+    <id>https://0x1eaf.dev/blog/ossu-2024-review/</id>
+    <content type="html">&lt;p&gt;This year I started the &lt;a href=&quot;https://cs.ossu.dev/&quot;&gt;OSSU Computer Science curriculum&lt;/a&gt; (with modifications). Here&#39;s how that has gone as of the end of 2024:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Nand2Tetris&lt;/strong&gt;: ✅ Completed, 2024-04-20&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Systematic Program Design&lt;/strong&gt;: ✅ Completed, 2024-09-21&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Discrete Mathematics by Epp, S.&lt;/strong&gt; ⏩ In-progress, chapter 8/12&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Introduction to Computer Systems&lt;/strong&gt; ⏩ In-progress, lecture 15/27, lab 4/7&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;nand2tetris&quot;&gt;Nand2Tetris&lt;/h2&gt;
+&lt;p&gt;This course taught me that I can learn anything I want. It also taught me a bunch of cool things about computer architecture.&lt;/p&gt;
+&lt;p&gt;Nand2Tetris is a course that takes you all the way from basic digital logic circuits to computer that can (int theory) run tetris. Through a series of projects you get to specify all the hardware components of a whole computer (they give you a clock, a screen, and a keyboard for free), make an assembler, a two-stage compiler for a simple programming language, and an OS written in that language.&lt;/p&gt;
+&lt;p&gt;The course gives each of its subjects a surface-level treatment, focusing instead on how each subject relates to the other, For an introductory computer architecture course, I think that is perfect. You really get an intuition for &lt;em&gt;why&lt;/em&gt; things are the way they are, while at the same time giving you an opportunity to get a feel for a variety of subjects in Computer Science that you can then choose to make a deeper dive into.&lt;/p&gt;
+&lt;p&gt;It&#39;s also great for building intuition about how computers actually. Before this course, the low-level mechanics of how memory and CPU instructions work were pure magic, but afterwards I had all the tools I needed to reason about it. This was especially helpful for the first half of the Introduction to Computer Systems course (especially the machine programming parts), since most of it was just the specifics of how x86-64 implements concepts I already learned in N2T.&lt;/p&gt;
+&lt;h2 id=&quot;systematic-program-design&quot;&gt;Systematic Program Design&lt;/h2&gt;
+&lt;p&gt;This is a solid small-scale software design course. I mostly took this course to see what sort of programming practices they&#39;re teaching young programmers these days, and I&#39;m happy to report that the state of things is pretty good at this level at least. I&#39;m especially happy about the TDD-style approach to things, even though this course&#39;s variation of it is more of a top-down approach than what Kent Beck had in mind. I also think if you treat the design recipes as ways to reason about a problem, and the templates as drilling exercises to get you used to that kind of reasoning, you&#39;ll get a lot out of this course. You&#39;re not supposed be copy-pasting templates in your professional work, but doing it the first few times will help you establish those thought patterns.&lt;/p&gt;
+&lt;h2 id=&quot;discrete-mathematics&quot;&gt;Discrete Mathematics&lt;/h2&gt;
+&lt;p&gt;I think I&#39;ve learned how to enjoy math. I don&#39;t know if it&#39;s The Joy of Learning in general, or if there&#39;s something specific about math. I think part of it might be that I really enjoy exploring systems of logic, and what is mathematics if not that. So far in this book I&#39;ve explored propositional logic, number theory, sequences and induction, set theory, and relations and functions. I will admit one thing, however: number theory is not really my jam. I&#39;ve noticed that my progress slows down significantly the more number theory I&#39;m doing. Everything else is super cool though.&lt;/p&gt;
+&lt;h2 id=&quot;introduction-to-computer-systems&quot;&gt;Introduction to Computer Systems&lt;/h2&gt;
+&lt;p&gt;I&#39;m going to make a bold claim. Carnegie Mellon University consistently ranks among the best universities in the world for Computer Science, and this course is one of the major reasons why. It covers a lot of the same material as Nand2Tetris but in much greater detail, and in the context of real-world hardware and software. The best way I can describe this course is that it bridges the gap between hardware and operating system. Like Nand2Tetris, it is not a course that covers one singular subject, but rather a collection of subjects that all relate to and build on each other. So far I&#39;ve learned about binary data representation (I finally understand how floats work), x86-64 machine code, pipelining and optimization, the memory hierarchy, and a bit of OS stuff. Now, this is a difficult course. You cannot simply read the book and watch the lectures, and then go on your merry day, you will not learn a thing from that. You have to do the practice problems from the book, you have to do the labs, and sometimes, it takes a few tries to fully &lt;em&gt;get&lt;/em&gt; a concept (I had to do several passes on code optimization in order to fully get how to reason about data-dependencies and pipelined CPU-instructions), but once you &lt;em&gt;get it&lt;/em&gt;, it is so rewarding. One thing to note is, you &lt;em&gt;need&lt;/em&gt; the textbook, which is called Computer Systems: A Programmer&#39;s Perspective, you need the US-edition specifically, and there are no good versions online, in stores or on the seven seas. And the print version is $160. So keep that in mind.&lt;/p&gt;
+&lt;h2 id=&quot;lessons-learned&quot;&gt;Lessons Learned&lt;/h2&gt;
+&lt;p&gt;The most important thing I learned this year was how to structure myself
+and my own learning, and to be consistent with it. It&#39;s something I
+always struggled with.&lt;/p&gt;
+&lt;p&gt;Another thing is the need to pace myself. It&#39;s commonly said on the OSSU
+discord that &amp;quot;speedrunning always takes longer&amp;quot;. This is true in two
+ways:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Rushing things is a detriment to learning. When you feel like you&#39;re
+in a hurry, you tend to skip over things, not do problems, etc. and
+as a result you don&#39;t learn what&#39;s needed in order to proceed. The
+result is a need to go back and repeat things you were already
+supposed to have learned. Take your time.&lt;/li&gt;
+&lt;li&gt;Burnout. Something like OSSU is a multi-year project. It turns out,
+learning a bachelor&#39;s/master&#39;s degree worth of material is going to
+take about a bachelor&#39;s/master&#39;s degree amount of time. Pushing yourself and overworking yourself for that long is gonna bite you, it&#39;s gonna lead to burn you out, and it&#39;s gonna slow you down in the long run.
+I realized at some point, that I needed to &lt;em&gt;learn&lt;/em&gt; how to force
+myself to relax. That means finding an activity wholly unrelated to
+studies or work. Play videogames, hang out with friends, drink a cup
+of tea while watching a show. Just make sure you relax.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&quot;whats-next&quot;&gt;What&#39;s Next?&lt;/h2&gt;
+&lt;p&gt;I try not to plan things too far. Usually the final decision on &amp;quot;what
+course/book/thing comes next&amp;quot; is made the moment i finish my current
+thing. With that being said, there&#39;s at least a few topics I want to
+explore in the new year.&lt;/p&gt;
+&lt;h3 id=&quot;algorithms&quot;&gt;Algorithms&lt;/h3&gt;
+&lt;p&gt;This is the natural next step after discrete mathematics. Part of why I
+started this whole thing was, that I wanted to become a better
+programmer, and the things I wanted to work on were the bare
+fundamentals. This is just that.&lt;/p&gt;
+&lt;p&gt;I&#39;ll be taking the theoretical approach for the simple reason that I&#39;m a
+nerd for theory. That means studying algorithms not as a subject of
+programming, but as a subject of math. Looking forward to it!&lt;/p&gt;
+&lt;h3 id=&quot;operating-systems&quot;&gt;Operating Systems&lt;/h3&gt;
+&lt;p&gt;Clearly I&#39;ve caught the systems programming bug. I just think it&#39;s neat.
+I&#39;ve got no idea if I&#39;ll ever get to work in systems programming
+professionally, but at the very least I find it fun right now.&lt;/p&gt;
+&lt;p&gt;The popular self-study course on this topic is OSTEP, and that&#39;s most
+likely the course I&#39;m going to follow. Free online textbooks are just
+too good to pass up on.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Code blocks</title>
+    <link href="https://0x1eaf.dev/blog/code-block-test/" />
+    <updated>2024-12-28T19:00:00Z</updated>
+    <id>https://0x1eaf.dev/blog/code-block-test/</id>
+    <content type="html">&lt;p&gt;In my quest to do as little web-development as possible when making this
+site, I decided to just fork this &lt;a href=&quot;https://github.com/11ty/eleventy-base-blog/&quot;&gt;base blog&lt;/a&gt; repo, and make
+some minor changes to the CSS to fit my needs (such as setting this
+lovely gruvbox-dark color-scheme). As it turns out, this base blog comes
+with the &lt;a href=&quot;https://www.11ty.dev/docs/plugins/syntaxhighlight/&quot;&gt;syntax highlighting plugin&lt;/a&gt; configured, which uses
+PrismJS to do syntax-highlighting on code snippets. It even comes with a
+few preset CSS themes. Now, none of those themes were gruvbox-dark, but
+no problem, I just copied the solarized theme and changed the colors to
+(mostly) match my neovim color-scheme. I think it turned out quite
+nicely:&lt;/p&gt;
+&lt;pre class=&quot;language-c&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-c&quot;&gt;&lt;span class=&quot;token comment&quot;&gt;//comment&lt;/span&gt;
+&lt;span class=&quot;token keyword&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;int&lt;/span&gt; argc&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;char&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;*&lt;/span&gt; argv&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;token function&quot;&gt;printf&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;Hello, World!&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&quot;language-rust&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-rust&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;fn&lt;/span&gt; &lt;span class=&quot;token function-definition function&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;token macro property&quot;&gt;println!&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;Hello, World&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class=&quot;language-java&quot; tabindex=&quot;0&quot;&gt;&lt;code class=&quot;language-java&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;token class-name&quot;&gt;Main&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;token keyword&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token class-name&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;]&lt;/span&gt; args&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;
+		&lt;span class=&quot;token class-name&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;out&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;println&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token string&quot;&gt;&quot;Hello, World!&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;;&lt;/span&gt;
+	&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+</content>
+  </entry>
+  <entry>
+    <title>We&#39;re live</title>
+    <link href="https://0x1eaf.dev/blog/hello/" />
+    <updated>2024-12-15T21:35:00Z</updated>
+    <id>https://0x1eaf.dev/blog/hello/</id>
+    <content type="html">&lt;p&gt;Finally got around to registering a domain name and picking a static
+site generator to use for my personal site (&lt;a href=&quot;https://www.11ty.dev/&quot;&gt;11ty&lt;/a&gt;, if you&#39;re curious).&lt;/p&gt;
+&lt;p&gt;I figured it would be nice to have a place to write about various things I learn along the
+way, or silly adventures in technology would be nice, as well as maybe
+hosting an online CV of sorts.&lt;/p&gt;
+&lt;p&gt;Let&#39;s see where this goes :3&lt;/p&gt;
+</content>
+  </entry>
+</feed>

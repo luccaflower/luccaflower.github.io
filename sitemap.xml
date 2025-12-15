@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+	
+	<url>
+		<loc>https://0x1eaf.dev/blog/hello/</loc>
+		<lastmod>2024-12-15</lastmod>
+	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/blog/code-block-test/</loc>
+		<lastmod>2024-12-28</lastmod>
+	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/blog/ossu-2024-review/</loc>
+		<lastmod>2024-12-28</lastmod>
+	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/blog/data-wrangling/</loc>
+		<lastmod>2025-01-17</lastmod>
+	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/blog/malloc/</loc>
+		<lastmod>2025-02-01</lastmod>
+	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/blog/run-xv6-ostep/</loc>
+		<lastmod>2025-07-07</lastmod>
+	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/blog/</loc>
+		<lastmod>2025-12-15</lastmod>
+	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/cv/</loc>
+		<lastmod>2025-12-15</lastmod>
+	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/</loc>
+		<lastmod>2025-12-15</lastmod>
+	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/ossu/progress/</loc>
+		<lastmod>2025-12-15</lastmod>
+	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/tags/</loc>
+		<lastmod>2025-12-15</lastmod>
+	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/feed/feed.xml</loc>
+		<lastmod>2025-12-15</lastmod>
+	</url>
+</urlset>

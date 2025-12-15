@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>we do a little data wrangling</title>
+		<meta name="description" content="The linux command line is quite powerful!">
+		<link rel="alternate" href="feed/feed.xml" type="application/atom+xml" title="0x1eaf">
+
+		<meta name="generator" content="Eleventy v3.1.2">
+		<style>/*
+ Gruvbox theme adapted from:
+
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+GRUVBOX HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #fbf1c7; /* base00 */
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+	background: #504945; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+	background: #504945; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background-color: #3c3836; /* bg1 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #a89984; /* fg4 */
+}
+
+.token.punctuation {
+	color: #ebdbb2; /* fg1 */
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #fe8019; /* orange */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+	color: #b8bb26; /* green */
+}
+
+.token.entity {
+	color: #a89984; /* base00 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+	color: #fabd2f; /* green */
+}
+
+.token.function,
+.token.class-name {
+	color: #83a598; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+	color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}
+/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, monospace;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #fbf1c7;
+	--color-gray-50: #ebdbb2;
+	--color-gray-90: #bdae93;
+
+		--background-color: #282828;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #98971a;
+	--text-color-link-active: #d79921;
+	--text-color-link-visited: #b8bb26;
+
+	--syntax-tab-size: 2;
+}
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family-monospace);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 40em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img {
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+header:after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+  background-color: #3c3836;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em .5em;
+	flex-wrap: wrap;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+	margin-right: 2em;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+	margin-right: 1em;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}</style>
+	</head>
+	<body>
+		<a href="#skip" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/" class="home-link">0x1eaf</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/">home</a></li>
+					<li class="nav-item"><a href="/blog/">blog</a></li>
+					<li class="nav-item"><a href="/cv/">cv</a></li>
+					<li class="nav-item"><a href="/ossu/progress/">ossu progress</a></li>
+					<li class="nav-item"><a href="/feed/feed.xml">rss/atom</a></li>
+					<li class="github"><a href="https://github.com/luccaflower">github</a>
+				</li></ul>
+			</nav>
+		</header>
+
+		<main id="skip">
+			<heading-anchors>
+				
+<h1 id="we-do-a-little-data-wrangling">we do a little data wrangling</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2025-01-17">17 January 2025</time></li>
+	<li><a href="/tags/journal/" class="post-tag">journal</a>, </li>
+	<li><a href="/tags/jobs/" class="post-tag">jobs</a>, </li>
+	<li><a href="/tags/data-wrangling/" class="post-tag">data-wrangling</a></li>
+</ul>
+<hr><strong>The linux command line is quite powerful!</strong>
+
+<p>I wanted to do some rudimentary statistics on the Swedish tech job market, both to test a few hypotheses of mine, and also to get informed about what subject areas I want to focus on in terms of employability. It's no secret that I want a new job doing something else than what I'm doing at my current job, so as much as I want to study for the sake of learning things that make me excited, I also need to stay cognizant of what job qualifications are in demand.</p>
+<p>Luckily, the Swedish Employment publishes an open web API which gives access to all job adverts that they have ever hosted on their current platform. So let's get all job adverts that were posted since the beginning of 2024:</p>
+<pre class="language-bash" tabindex="0"><code class="language-bash">❯ <span class="token function">curl</span> <span class="token parameter variable">-H</span> <span class="token string">"Content-type: application/json"</span> <span class="token punctuation">\</span>
+<span class="token string">'https://jobstream.api.jobtechdev.se/stream?date=2024-01-01T00:00:00'</span> <span class="token operator">></span> jobs.json
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+<span class="token number">100</span>  682M    <span class="token number">0</span>  682M    <span class="token number">0</span>     <span class="token number">0</span>  4473k      <span class="token number">0</span> --:--:--  <span class="token number">0</span>:02:36 --:--:-- 5017k
+❯</code></pre>
+<p>Awesome.</p>
+<p>Now, the Linux command line, it turns out, is an <em>excellent</em> too for wrangling large datasets. Let's look at the tools we're gonna use:</p>
+<ul>
+<li><strong>cat</strong>: simply prints the contents of a file</li>
+<li><strong>jq</strong>: format, filter, and transform JSON data.</li>
+<li><strong>sed</strong>: short for &quot;stream-editor&quot;. Can do various line-by-line transformations using RegEx. We're just gonna do simple search-replace with it.</li>
+<li><strong>sort</strong>: it sorts!</li>
+<li><strong>uniq</strong>: prints and counts unique lines. Requires sorted data.</li>
+<li><strong>grep</strong>: extract data with RegEx!</li>
+</ul>
+<p>The data we get is an array of JSON objects. The fields we're interested in are <code>occupation_group</code>, which denotes the job category, and <code>description</code>, which contains the job description. The <code>occupation_group</code>-field looks like this:</p>
+<pre class="language-json" tabindex="0"><code class="language-json"><span class="token punctuation">{</span>
+  <span class="token property">"concept_id"</span><span class="token operator">:</span> string<span class="token punctuation">,</span>
+  <span class="token property">"label"</span><span class="token operator">:</span> string<span class="token punctuation">,</span>
+  <span class="token property">"legacy_ams_taxonomy_id"</span><span class="token operator">:</span> int
+<span class="token punctuation">}</span></code></pre>
+<p>We're interested in the <code>concept_id</code> for the label &quot;Mjukvaru- och systemutvecklare m.fl.&quot; (&quot;Software- and system developers etc.&quot;).</p>
+<p>As a fun little exercise,  let's find the amount of job ads for each category:</p>
+<pre class="language-bash" tabindex="0"><code class="language-bash">❯ <span class="token function">cat</span> jobs.json <span class="token operator">|</span>
+jq <span class="token string">'.[].occupation_group | select(.label != null) | .label'</span> <span class="token operator">|</span>
+<span class="token function">sort</span> <span class="token operator">|</span> <span class="token function">uniq</span> <span class="token parameter variable">-c</span> <span class="token operator">|</span> <span class="token function">sort</span> <span class="token parameter variable">-nr</span>
+   <span class="token number">1879</span> <span class="token string">"Mjukvaru- och systemutvecklare m.fl."</span>
+   <span class="token number">1637</span> <span class="token string">"Grundutbildade sjuksköterskor"</span>
+   <span class="token number">1628</span> <span class="token string">"Personliga assistenter"</span>
+   <span class="token number">1392</span> <span class="token string">"Företagssäljare"</span>
+    <span class="token number">920</span> <span class="token string">"Undersköterskor, hemtjänst, hemsjukvård, äldreboende och habilitering"</span>
+    <span class="token number">915</span> <span class="token string">"Motorfordonsmekaniker och fordonsreparatörer"</span>
+    <span class="token punctuation">..</span>.</code></pre>
+<p>So much for the recession in the tech industry, huh.</p>
+<p>Enough of that, let's find that ID:</p>
+<pre class="language-bash" tabindex="0"><code class="language-bash"><span class="token function">cat</span> jobs.json <span class="token operator">|</span>
+jq <span class="token string">'.[].occupation_group | select(.label != null)'</span> <span class="token operator">|</span>
+<span class="token function">grep</span> Mjukvaru <span class="token parameter variable">-B2</span> <span class="token parameter variable">-A2</span>
+<span class="token punctuation">{</span>
+  <span class="token string">"concept_id"</span><span class="token builtin class-name">:</span> <span class="token string">"DJh5_yyF_hEM"</span>,
+  <span class="token string">"label"</span><span class="token builtin class-name">:</span> <span class="token string">"Mjukvaru- och systemutvecklare m.fl."</span>,
+  <span class="token string">"legacy_ams_taxonomy_id"</span><span class="token builtin class-name">:</span> <span class="token string">"2512"</span>
+<span class="token punctuation">}</span>
+--
+<span class="token punctuation">{</span>
+  <span class="token string">"concept_id"</span><span class="token builtin class-name">:</span> <span class="token string">"DJh5_yyF_hEM"</span>,
+  <span class="token string">"label"</span><span class="token builtin class-name">:</span> <span class="token string">"Mjukvaru- och systemutvecklare m.fl."</span>,
+  <span class="token string">"legacy_ams_taxonomy_id"</span><span class="token builtin class-name">:</span> <span class="token string">"2512"</span>
+<span class="token punctuation">}</span>
+--
+<span class="token comment">#...</span></code></pre>
+<p>Now we can use that ID to filter for software jobs only, and extracting the formatted text of the advert:</p>
+<pre class="language-bash" tabindex="0"><code class="language-bash">jq <span class="token string">'.[] | select(.occupation_group.concept_id == "DJh5_yyF_hEM") | .description.text_formatted'</span></code></pre>
+<p>Make it all lowercase for ease of processing keywords:</p>
+<pre class="language-bash" tabindex="0"><code class="language-bash"> <span class="token function">tr</span> <span class="token string">'[:upper:]'</span> <span class="token string">'[:lower:]'</span></code></pre>
+<p>Remove HTML tags and newlines:</p>
+<pre class="language-bash" tabindex="0"><code class="language-bash"><span class="token function">sed</span> <span class="token string">'s/\\n//g'</span> <span class="token operator">|</span> <span class="token function">sed</span> <span class="token parameter variable">-E</span> <span class="token string">'s/&lt;\/?[a-z]{1,10}>//g'</span></code></pre>
+<p>Extract all the keywords I'm interested in - programming languages and other qualifications. I use the -P flag to use Perl's RegEx engine, which enables lookahead and lookbehind qualifiers.</p>
+<pre class="language-bash" tabindex="0"><code class="language-bash"><span class="token function">grep</span> <span class="token parameter variable">-oP</span> <span class="token string">'\(?&lt;ǃ\w)((c#)|(c)|(java)|(javascript)|(typescript)|(js)|(ts)|(python)|(linux)|(elixir)|(erlang)|(go)|(c\+\+)|(react)|(angular)|(svelte)|(\.net)|(embedded)|(rust)|(scala)|(clojure)|(kotlin)|(ruby)|(swift)|(golang))(?=[ ,./])'</span></code></pre>
+<p>Count the occurrence of each keyword</p>
+<pre class="language-bash" tabindex="0"><code class="language-bash"><span class="token function">sort</span> <span class="token operator">|</span> <span class="token function">uniq</span> <span class="token parameter variable">-c</span> <span class="token operator">|</span> <span class="token function">sort</span> <span class="token parameter variable">-nr</span></code></pre>
+<p>Putting it all together</p>
+<pre class="language-bash" tabindex="0"><code class="language-bash">❯ <span class="token function">cat</span> jobs.json <span class="token operator">|</span>
+jq <span class="token string">'.[] | select(.occupation_group.concept_id == "DJh5_yyF_hEM") | .description.text_formatted'</span> <span class="token operator">|</span>
+<span class="token function">tr</span> <span class="token string">'[:upper:]'</span> <span class="token string">'[:lower:]'</span> <span class="token operator">|</span>
+<span class="token function">sed</span> <span class="token string">'s/\\n//g'</span> <span class="token operator">|</span> <span class="token function">sed</span> <span class="token parameter variable">-E</span> <span class="token string">'s/&lt;\/?[a-z]{1,10}>//g'</span> <span class="token operator">|</span>
+<span class="token function">grep</span> <span class="token parameter variable">-oP</span> <span class="token string">'(?&lt;!\w)((c#)|(c)|(java)|(javascript)|(typescript)|(js)|(ts)|(python)|(linux)|(elixir)|(erlang)|(go)|(c\+\+)|(react)|(angular)|(svelte)|(\.net)|(embedded)|(rust)|(scala)|(clojure)|(kotlin)|(ruby)|(swift)|(golang))(?=[ ,./])'</span> <span class="token operator">|</span>
+<span class="token function">sort</span> <span class="token operator">|</span> <span class="token function">uniq</span> <span class="token parameter variable">-c</span> <span class="token operator">|</span> <span class="token function">sort</span> <span class="token parameter variable">-nr</span>
+    <span class="token number">583</span> <span class="token function">java</span>
+    <span class="token number">558</span> python
+    <span class="token number">508</span> .net
+    <span class="token number">487</span> embedded
+    <span class="token number">434</span> c++
+    <span class="token number">411</span> c<span class="token comment">#</span>
+    <span class="token number">339</span> c
+    <span class="token number">327</span> react
+    <span class="token number">311</span> linux
+    <span class="token number">238</span> javascript
+    <span class="token number">217</span> typescript
+    <span class="token number">176</span> js
+    <span class="token number">165</span> angular
+    <span class="token number">107</span> go
+    <span class="token number">104</span> kotlin
+     <span class="token number">64</span> ts
+     <span class="token number">40</span> swift
+     <span class="token number">34</span> rust
+     <span class="token number">34</span> golang
+     <span class="token number">29</span> scala
+     <span class="token number">13</span> ruby
+      <span class="token number">4</span> svelte
+      <span class="token number">4</span> erlang
+      <span class="token number">2</span> elixir
+      <span class="token number">1</span> clojure</code></pre>
+<p>Very interesting. I expected Java to be high, but I honestly thought
+C#/.NET would be higher. Same with the JS/TS + frameworks. Python is
+also highly sought after, which is expected.</p>
+<p>Now, Go also happens to be a common English word, and given that many of these ads are written in English, the likelyhood of Go being overcounted is very high. I'm surprised to see it rank so low, regardless.</p>
+<p>What I'm most interested in is the amount of listings that contain the word &quot;embedded&quot;. As mentioned in <a href="/blog/ossu-2024-review/">a previous blog post</a>, I've gotten quite fond of systems level programming. With the understanding that I'd need to learn some rudimentary electrical engineering, maybe I should take a shot at becoming an embedded developer. It sounds fun, not gonna lie.</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/blog/ossu-2024-review/">OSSU 2024 In Review</a></li><li class="links-nextprev-next">Next →<br><a href="/blog/malloc/">What I learned from re-implementing Malloc</a></li>
+</ul>
+<meta name="fediverse:creator" content="@0x1eaf@girlcock.club">
+
+			</heading-anchors>
+		</main>
+
+		<!-- This page `/blog/data-wrangling/` was built on 2025-12-15T06:08:29.275Z -->
+		<script type="module" src="/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

@@ -1,0 +1,1119 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>What I learned from re-implementing Malloc</title>
+		<meta name="description" content="At Carnegie Mellon University, computer science student taking the &quot;Introduction to Computer Systems&quot; course are asked to implement their own version of &quot;malloc&quot;, the dynamic memory allocator offered by the C standard library. Let&#39;s talk about that.">
+		<link rel="alternate" href="feed/feed.xml" type="application/atom+xml" title="0x1eaf">
+
+		<meta name="generator" content="Eleventy v3.1.2">
+		<style>/*
+ Gruvbox theme adapted from:
+
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+GRUVBOX HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #fbf1c7; /* base00 */
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+	background: #504945; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+	background: #504945; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background-color: #3c3836; /* bg1 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #a89984; /* fg4 */
+}
+
+.token.punctuation {
+	color: #ebdbb2; /* fg1 */
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #fe8019; /* orange */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+	color: #b8bb26; /* green */
+}
+
+.token.entity {
+	color: #a89984; /* base00 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+	color: #fabd2f; /* green */
+}
+
+.token.function,
+.token.class-name {
+	color: #83a598; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+	color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}
+/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, monospace;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #fbf1c7;
+	--color-gray-50: #ebdbb2;
+	--color-gray-90: #bdae93;
+
+		--background-color: #282828;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #98971a;
+	--text-color-link-active: #d79921;
+	--text-color-link-visited: #b8bb26;
+
+	--syntax-tab-size: 2;
+}
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family-monospace);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 40em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img {
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+header:after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+  background-color: #3c3836;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em .5em;
+	flex-wrap: wrap;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+	margin-right: 2em;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+	margin-right: 1em;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}</style>
+	</head>
+	<body>
+		<a href="#skip" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/" class="home-link">0x1eaf</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/">home</a></li>
+					<li class="nav-item"><a href="/blog/">blog</a></li>
+					<li class="nav-item"><a href="/cv/">cv</a></li>
+					<li class="nav-item"><a href="/ossu/progress/">ossu progress</a></li>
+					<li class="nav-item"><a href="/feed/feed.xml">rss/atom</a></li>
+					<li class="github"><a href="https://github.com/luccaflower">github</a>
+				</li></ul>
+			</nav>
+		</header>
+
+		<main id="skip">
+			<heading-anchors>
+				
+<h1 id="what-i-learned-from-re-implementing-malloc">What I learned from re-implementing Malloc</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2025-02-01">01 February 2025</time></li>
+	<li><a href="/tags/programming/" class="post-tag">programming</a>, </li>
+	<li><a href="/tags/computer-systems/" class="post-tag">computer systems</a>, </li>
+	<li><a href="/tags/ossu/" class="post-tag">ossu</a></li>
+</ul>
+<hr><strong>At Carnegie Mellon University, computer science student taking the &quot;Introduction to Computer Systems&quot; course are asked to implement their own version of &quot;malloc&quot;, the dynamic memory allocator offered by the C standard library. Let&#39;s talk about that.</strong>
+
+<h2 id="whats-in-an-allocator">What's in an allocator</h2>
+<p>A dynamic memory allocator is primarily used for three things:</p>
+<ul>
+<li>To allocate memory whose size is not known at compile-time</li>
+<li>To allocate very large blocks of memory</li>
+<li>To allocate memory whose lifetime needs to be longer than the scope of the function that allocates it.</li>
+</ul>
+<p>A general-purpose allocator like malloc really has the following main requirements, many of which are in conflict with each other:</p>
+<ul>
+<li>Allocation must be very fast.</li>
+<li>The allocator must utilize memory efficiently. This means reducing fragmentation and overhead.</li>
+<li>Memory must be contiguous. If an application asks for a block of a certain size, then that block must be a single block of memory. It cannot be split up.</li>
+<li>Once a memory block has been allocated, its address cannot be moved unless the application explicitly asks to have it reallocated.</li>
+<li>Requests for allocation and freeing of memory can come in in any order, and the allocator cannot reorder them. If a request is received. it is immediately serviced.</li>
+<li>The memory allocator can expect that each allocation request will have a corresponding deallocation request.</li>
+</ul>
+<p>The presents an interesting balancing act where the need maximize memory utilization may introduce extra performance overhead, and vice versa. Since live blocks of memory cannot be moved, consolidation of memory blocks can only happen on free blocks of memory. If there are many small fragments of free memory in-between live blocks, too bad, you have to wait until one of those blocks gets freed.</p>
+<p>We are given some leeway with the last requirement, however, and that is that it is the responsibility of the application to make sure that memory doesn't leak, that all deallocation requests are valid, and that free memory is never accessed. This means, that the allocator does not need to concern itself with any of those things.</p>
+<h2 id="the-malloc-api">The malloc API</h2>
+<p>The allocator API that we are going to implement is very simple:</p>
+<pre class="language-c" tabindex="0"><code class="language-c"><span class="token class-name">size_t</span> <span class="token function">mm_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">void</span> <span class="token operator">*</span><span class="token function">mm_malloc</span><span class="token punctuation">(</span><span class="token class-name">size_t</span> size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">void</span> <span class="token function">mm_free</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>ptr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">void</span> <span class="token operator">*</span><span class="token function">mm_realloc</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>ptr<span class="token punctuation">,</span> <span class="token class-name">size_t</span> new_size<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>Each function has the following contracts:</p>
+<ul>
+<li><code>mm_init</code>: Initialize the memory allocator. Return 0 on success, and -1 on failure.</li>
+<li><code>mm_malloc</code>: Return a pointer to a memory block that is at least <code>size</code> big, or <code>NULL</code> if the request fails. <code>size</code> cannot be 0.</li>
+<li><code>mm_free</code>: Deallocate the block of memory starting at the address of <code>ptr</code>. <code>ptr</code> must be the starting address of an allocated block of memory.</li>
+<li><code>mm_realloc</code>: Return a pointer to a block of memory that is at least <code>new_size</code> big. The data at the returned pointer must be identical to the data at <code>ptr</code> up to the <code>new_size</code>'th byte.</li>
+</ul>
+<p>To support our implementation, we're given the <code>mem_sbrk</code> function as an analogue to <code>sbrk</code>. This function simply increases the heap by the requested size, and returns the base address of the new area. This way, the autograder that is included in the lab can keep track of where memory is allocated on the heap, and inspect it for measuring the correctness and performance of the allocator.</p>
+<h2 id="how-is-this-thing-scored">How is this thing scored</h2>
+<p>As mentioned, the malloc-lab includes an autograder that is used to inspect the behavior of the memory allocator in order to measure its correctness and performance. It scores the allocator on three metrics:</p>
+<ul>
+<li>Correctness: a faulty allocator gets 0 points.</li>
+<li>Utilization: How much memory is in use vs how much memory was requested (0 points for 0%, 60 points for 100%).</li>
+<li>Throughput: How fast is my memory allocator compared to libc (40 points, if it's at least as fast).</li>
+</ul>
+<p>By default, the autograder is configured to compare the throughput of my allocator against a hardcoded value of 600Kops/sec (where each &quot;op&quot; represents a call to malloc, free, and realloc). This is a comically low number on a modern machine. Luckily a commandline option to measure the performance of libc malloc on my own machine, which comes out to ~30,000Kops/sec, which is the value that I will use.</p>
+<h2 id="implicit-free-list-the-textbook-implementation">Implicit free-list - the textbook implementation</h2>
+<p>The first implementation is a simple implicit free-list implementation that is mostly copied over from the <a href="https://csapp.cs.cmu.edu/">CS:APP</a> textbook, with all the macros replaced with inline functions and constexpr values. As a result, this section will mostly be a retread of that section in the textbook.</p>
+<p>Each block of memory contains a header and a footer with the payload in the middle.</p>
+<p><img src="memory-block.png" alt="Diagram of a memory block including header, footer, and payload"></p>
+<p>The header and the footer both encode the size of their block, thus implicitly linking each block together via simple pointer arithmetic starting from the base of the first block of memory.</p>
+<p><img src="implicit-free.png" alt="Diagram showcasing memory blocks linked together by their size"></p>
+<p>Due to alignment requirements, each block of memory has to start at an address that is a multiple of either 4 or 8 (depending on whether it's a 32- or 64-bit platform). As a result, the 2 or 3 least significant bits are guaranteed to be zero. We can take advantage of that to encode information about the block in the header as well as the size. We will use the least significant bit to encode whether the block has been allocated or not.</p>
+<p>To implement this, let's first define some simple utility functions and constants.</p>
+<ul>
+<li><code>get_size</code>: returns the size-field from a header or footer.</li>
+<li><code>get_alloc</code>: returns the alloc-field from a header or footer.</li>
+<li><code>put</code>: assigns a value to a header or footer.</li>
+<li><code>pack</code>: returns the bitwise or of two unsigned integers (used to pack
+the size-field with the alloc field).</li>
+<li><code>header</code>: returns the header pointer from a block pointer</li>
+<li><code>footer</code>: returns a footer pointer from a block pointer</li>
+<li><code>next_block_pointer</code>: returns the next block pointer from the current
+one.</li>
+<li><code>prev_block_pointer</code>: returns the previous block pointer from the
+current one.</li>
+</ul>
+<p>From this we can start constructing our allocator. We start with the init function.</p>
+<pre class="language-c" tabindex="0"><code class="language-c"><span class="token keyword">int</span> <span class="token function">mm_init</span><span class="token punctuation">(</span><span class="token keyword">void</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>heap_listp <span class="token operator">=</span> <span class="token function">mem_sbrk</span><span class="token punctuation">(</span><span class="token number">4</span> <span class="token operator">*</span> w_size<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token comment">// padding</span>
+    <span class="token function">put</span><span class="token punctuation">(</span>heap_listp<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">//prologue headers</span>
+    <span class="token function">put</span><span class="token punctuation">(</span>heap_listp <span class="token operator">+</span> w_size<span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>d_size<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">put</span><span class="token punctuation">(</span>heap_listp <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token number">2</span> <span class="token operator">*</span> w_size<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>d_size<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">//epilogue header</span>
+    <span class="token comment">//this gets overwritten when the heap is extended</span>
+    <span class="token function">put</span><span class="token punctuation">(</span>heap_listp <span class="token operator">+</span> <span class="token punctuation">(</span><span class="token number">3</span> <span class="token operator">*</span> w_size<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">//set the base of the heap to be at the prologue</span>
+    heap_listp <span class="token operator">+=</span> <span class="token punctuation">(</span><span class="token number">2</span> <span class="token operator">*</span> w_size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">extend_heap</span><span class="token punctuation">(</span>chunk_size<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> <span class="token number">0</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>We create an initial heap with a total of 4 32-bit words. The first word is padding to keep the heap aligned to 8 bytes, while the prologue headers create an &quot;allocated&quot; block that points to the epilogue block which terminates the list. At this point, the heap is ready to use, however, with no free blocks, it's perhaps not the most useful heap in the world, so let's extend it.</p>
+<pre class="language-c" tabindex="0"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token operator">*</span><span class="token function">extend_heap</span><span class="token punctuation">(</span><span class="token class-name">size_t</span> size<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">//align the size to 8 bytes</span>
+    size <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>size <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token operator">|</span> <span class="token number">0x7</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">;</span>
+    <span class="token keyword">char</span> <span class="token operator">*</span>bp<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">long</span><span class="token punctuation">)</span><span class="token punctuation">(</span>bp <span class="token operator">=</span> <span class="token function">mem_sbrk</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token comment">//create the new free block</span>
+    <span class="token comment">//overwriting the previous epilogue</span>
+    <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">footer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token comment">//create new epilogue</span>
+    <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span><span class="token function">next_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">return</span> <span class="token function">coalesce</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>We overwrite the epilogue with a new header specifying a free block of the size of the extension. Because it's not unlikely that this new free block comes after another free block, we also choose to coalesce it, that is, combine any neighboring free blocks into one single block.</p>
+<pre class="language-c" tabindex="0"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token operator">*</span><span class="token function">coalesce</span><span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span>bp<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// Is the previous block allocated?</span>
+    <span class="token class-name">size_t</span> prev_alloc <span class="token operator">=</span> <span class="token function">get_alloc</span><span class="token punctuation">(</span><span class="token function">footer</span><span class="token punctuation">(</span><span class="token function">prev_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// Is the next block allocated?</span>
+    <span class="token class-name">size_t</span> next_alloc <span class="token operator">=</span> <span class="token function">get_alloc</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span><span class="token function">next_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token class-name">size_t</span> size <span class="token operator">=</span> <span class="token function">get_size</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>prev_alloc <span class="token operator">&amp;&amp;</span> next_alloc<span class="token punctuation">)</span>
+        <span class="token comment">/*
+         * Case 1:
+         * No neighbouring block is free. Do not coalesce.
+         * Return the same pointer
+         */</span>
+        <span class="token keyword">return</span> bp<span class="token punctuation">;</span>
+    <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>prev_alloc <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>next_alloc<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">/*
+         * Case 2:
+         * The preceding block is not free, but the succeeding
+         * one is. Add the size of that block to the current size,
+         * encode it in the header of the current block, and return
+         * its pointer.
+         */</span>
+        size <span class="token operator">+=</span> <span class="token function">get_size</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span><span class="token function">next_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">footer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>prev_alloc <span class="token operator">&amp;&amp;</span> next_alloc<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">/*
+         * Case 3:
+         * The preceding block is free, but the succeeding
+         * block is not. Add the size of the the preceeding block
+         * to the size, encode it in the header of the preceeding block
+         * and return a pointer to that block.
+         */</span>
+        size <span class="token operator">+=</span> <span class="token function">get_size</span><span class="token punctuation">(</span><span class="token function">footer</span><span class="token punctuation">(</span><span class="token function">prev_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">footer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span><span class="token function">prev_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        bp <span class="token operator">=</span> <span class="token function">prev_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token comment">/*
+         * Case 4:
+         * Both neighboring blocks are free. Add
+         * the sizes of all three blocks together and encode
+         * it in the header of the preceeding block. Return
+         * a pointer to that block.
+         */</span>
+        size <span class="token operator">+=</span> <span class="token function">get_size</span><span class="token punctuation">(</span><span class="token function">footer</span><span class="token punctuation">(</span><span class="token function">prev_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">+</span>
+                <span class="token function">get_size</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span><span class="token function">next_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span><span class="token function">prev_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">footer</span><span class="token punctuation">(</span><span class="token function">next_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        bp <span class="token operator">=</span> <span class="token function">prev_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token keyword">return</span> bp<span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>Now let's look at how we actually allocate memory.</p>
+<pre class="language-c" tabindex="0"><code class="language-c"><span class="token keyword">void</span> <span class="token operator">*</span><span class="token function">mm_malloc</span><span class="token punctuation">(</span><span class="token class-name">size_t</span> size<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token class-name">size_t</span> adj_size<span class="token punctuation">;</span>
+    <span class="token class-name">size_t</span> ext_size<span class="token punctuation">;</span>
+    <span class="token keyword">char</span> <span class="token operator">*</span>bp<span class="token punctuation">;</span>
+
+    <span class="token comment">// 0 is not a valid size.</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>size <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// Calculate the effective size of the block.</span>
+    <span class="token comment">// The block must be at least the size two headers</span>
+    <span class="token comment">// plus and an 8 byte word.</span>
+    <span class="token comment">// The total payload will be at least 8 bytes larger than</span>
+    <span class="token comment">// the requested size to acommodate the header and the footer</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>size <span class="token operator">&lt;=</span> d_size<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        adj_size <span class="token operator">=</span> <span class="token number">2</span> <span class="token operator">*</span> d_size<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        adj_size <span class="token operator">=</span> d_size <span class="token operator">*</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>size <span class="token operator">+</span> <span class="token punctuation">(</span>d_size<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token punctuation">(</span>d_size <span class="token operator">-</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">/</span> d_size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">// Find a block of memory to satisfy the request.</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>bp <span class="token operator">=</span> <span class="token function">find_fit</span><span class="token punctuation">(</span>adj_size<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">//Allocate the block</span>
+        <span class="token function">place</span><span class="token punctuation">(</span>bp<span class="token punctuation">,</span> adj_size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">return</span> bp<span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+
+    <span class="token comment">//If no block is found, extend the heap. If extending the heap</span>
+    <span class="token comment">//fails, the allocation fails</span>
+    ext_size <span class="token operator">=</span> <span class="token function">max</span><span class="token punctuation">(</span>adj_size<span class="token punctuation">,</span> chunk_size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>bp <span class="token operator">=</span> <span class="token function">extend_heap</span><span class="token punctuation">(</span>ext_size<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">return</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">//Allocate to the new block.</span>
+    <span class="token comment">//Since we extended the heap by at least the amount</span>
+    <span class="token comment">//needed to satisfy the request, it is a guaranteed fit.</span>
+    <span class="token function">place</span><span class="token punctuation">(</span>bp<span class="token punctuation">,</span> adj_size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> bp<span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>Now is a good time to talk about fit-policies. There are many different strategies to take when it comes to finding an appropriate block of memory to allocate (a fit). There are three popular ones:</p>
+<ul>
+<li><strong>First fit</strong>: Search the whole list from the beginning of the free-list. Select the first available block that can satisfy the request.</li>
+<li><strong>Next fit</strong>: Like first fit, but instead of starting from the beginning, start from where the last search left off.</li>
+<li><strong>Best fit</strong>: Search the entire free-list and select the block that is closest in size to the requested size. Short-circuit on an exact match.
+On the surface, this looks like a simple trade-off between throughput and utilization. Pick first fit for throughput, and best-fit for utilization. It is not so simple, however. The issue with a best-fit policy is that, paradoxically, a fit can be <em>too good</em> without being <em>perfect,</em> depending on the allocator's splitting policy. As a result, the allocator may split off many small blocks of memory, that are too small to satisfy any request, and all but contribute to fragmentation. For this allocator, we choose a first-fit policy because it is the simplest.</li>
+</ul>
+<pre class="language-c" tabindex="0"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token operator">*</span><span class="token function">find_fit</span><span class="token punctuation">(</span><span class="token class-name">size_t</span> size<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">char</span> <span class="token operator">*</span>bp <span class="token operator">=</span> heap_listp<span class="token punctuation">;</span>
+         <span class="token function">get_size</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">;</span>
+         bp <span class="token operator">=</span> <span class="token function">next_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span>
+    <span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">get_alloc</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> <span class="token punctuation">(</span>size <span class="token operator">&lt;=</span> <span class="token function">get_size</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+            <span class="token keyword">return</span> bp<span class="token punctuation">;</span>
+        <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+    <span class="token keyword">return</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>This one is very simple. Just iterate through each block on the list. If a block is not allocated, and its size is large enough, allocate it. If no block is found, return <code>NULL</code>.</p>
+<p>Next comes placement.</p>
+<pre class="language-c" tabindex="0"><code class="language-c"><span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">place</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>bp<span class="token punctuation">,</span> <span class="token class-name">size_t</span> size<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token class-name">size_t</span> csize <span class="token operator">=</span> <span class="token function">get_size</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">//if the split block is at least as large</span>
+    <span class="token comment">//as the minimum block size</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>csize <span class="token operator">-</span> size<span class="token punctuation">)</span> <span class="token operator">>=</span> <span class="token punctuation">(</span><span class="token number">2</span> <span class="token operator">*</span> d_size<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token comment">//split</span>
+        <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">footer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        bp <span class="token operator">=</span> <span class="token function">next_block_pointer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>csize <span class="token operator">-</span> size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">footer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>csize <span class="token operator">-</span> size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+        <span class="token comment">//else do not split and simply mark as allocated</span>
+        <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>csize<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">footer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>csize<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></code></pre>
+<p>First, we have to decide on whether or not to split the block in two. For this implementation we simply check, if the split block would be at least large enough to hold the minimum block size, and if it is, split it.</p>
+<p>By setting the alloc-bit to one, we have marked it as allocated, and the malloc-function can safely return a pointer to the block.</p>
+<p>Freeing memory in this kind of allocator is very simple:</p>
+<pre class="language-c" tabindex="0"><code class="language-c"><span class="token keyword">void</span> <span class="token function">mm_free</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>bp<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token class-name">size_t</span> size <span class="token operator">=</span> <span class="token function">get_size</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+    <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">put</span><span class="token punctuation">(</span><span class="token function">footer</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">pack</span><span class="token punctuation">(</span>size<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">coalesce</span><span class="token punctuation">(</span>bp<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>Just mark the block as free and coalesce.</p>
+<p>Finally we have <code>realloc</code>. This one is actually just the default implementation included in the lab:</p>
+<pre class="language-c" tabindex="0"><code class="language-c"><span class="token keyword">void</span> <span class="token operator">*</span><span class="token function">mm_realloc</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>bp<span class="token punctuation">,</span> <span class="token class-name">size_t</span> size<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">void</span> <span class="token operator">*</span>oldptr <span class="token operator">=</span> bp<span class="token punctuation">;</span>
+    <span class="token keyword">void</span> <span class="token operator">*</span>newptr<span class="token punctuation">;</span>
+    <span class="token class-name">size_t</span> copy_size<span class="token punctuation">;</span>
+
+    newptr <span class="token operator">=</span> <span class="token function">mm_malloc</span><span class="token punctuation">(</span>size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>newptr <span class="token operator">==</span> <span class="token constant">NULL</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token constant">NULL</span><span class="token punctuation">;</span>
+    copy_size <span class="token operator">=</span> <span class="token function">get_size</span><span class="token punctuation">(</span><span class="token function">header</span><span class="token punctuation">(</span>oldptr<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">-</span> d_size<span class="token punctuation">;</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span>size <span class="token operator">&lt;</span> copy_size<span class="token punctuation">)</span>
+        copy_size <span class="token operator">=</span> size<span class="token punctuation">;</span>
+    <span class="token function">memcpy</span><span class="token punctuation">(</span>newptr<span class="token punctuation">,</span> oldptr<span class="token punctuation">,</span> copy_size<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">mm_free</span><span class="token punctuation">(</span>oldptr<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">return</span> newptr<span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>This implementation simply makes a call to <code>malloc</code> for a block of the new size, uses <code>memcpy</code> to copy the data of the old block over to the new block, and frees the old block.</p>
+<p>With that, we have a fully functional memory allocator. Let's see how it performs.</p>
+<pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
+trace  valid  util     ops      secs  Kops/sec
+ 0       yes   99%    5694  0.003271  1741
+ 1       yes   98%    5848  0.003519  1662
+ 2       yes   99%    6648  0.004608  1443
+ 3       yes   99%    5380  0.003373  1595
+ 4       yes   20%   14400  0.000059242424
+ 5       yes   91%    4800  0.004205  1142
+ 6       yes   92%    4800  0.003832  1252
+ 7       yes   55%   12000  0.067335   178
+ 8       yes   51%   24000  0.110799   217
+ 9       yes   21%   14401  0.025789   558
+10       yes   23%   14401  0.000938 15348
+Total          68%  112372  0.227729   493
+
+Perf index = 41 (util) + 1 (thru) = 41/100</code></pre>
+<p>While memory utilization isn't disastrous, the throughput here is <em>abysmal</em>, coming in at around ~1.5% of the throughput of libc malloc. So why is that?</p>
+<p>Freeing is obviously very fast, both the free and coalesce operations are constant-time involving only addition and bit-flipping.</p>
+<p>Allocation on the other hand involves a linear search, not just of the free list (there is no free-list to be quite honest), but of the entire implicit list of every block of memory known to the allocator. Not only is this slow by default, but it will get slower and slower as the heap grows.</p>
+<p>We can do better.</p>
+<h2 id="second-iteration-explicit-free-list">Second iteration: explicit free-list</h2>
+<p>Since free-blocks are, well, free, we're allowed to put any data we want in them. Thus we can make our free-list data structure explicit by including pointers to the previous and next free memory blocks, creating a doubly-linked list.</p>
+<p><img src="explicit-free.png" alt="Diagram showcasing memory blocks linked together in a doubly-linked
+list">
+(For simplicity's sake, the free-list has been rendered with double-sided arrows, but in practice, every pointer is the address of the base of the block that it points to. So both <code>next</code> and <code>previous</code> point to the <code>previous</code>-field of the next and previous node in the list respectively.)</p>
+<p>As illustrated, one consequence of this is that the free-list is no longer ordered by continuously by their address. There are explicit free-list implementations that are address-ordered (and literature suggests that they are good at reducing fragmentation), however, we are only going to consider two policies for our allocator:</p>
+<ul>
+<li><strong>First in, first out</strong> (FIFO): Each new free block is appended to the tail of the list. The free-list is searched from the head, so the least recently freed block that fits will be allocated for a given request.</li>
+<li><strong>Last in, first out</strong> (LIFO): Each new free block is prepended to the head of the list. The free-list is search from the head, so the most recently freed block that fits will be allocated for a given request.
+In either case it is a standard implementation of a doubly-linked list,
+so I won't bore you with the details.</li>
+</ul>
+<p>Now, it turns out that we only have to make some pretty minor changes to our existing code in order to implement the explicit free-list. Let's look at <code>mm_malloc</code>:</p>
+<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span>void *mm_malloc(size_t size) {
+</span>...
+<span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    if (size &lt;= d_size) {
+<span class="token prefix deleted">-</span>        adj_size = 2 * d_size;
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    if (size &lt;= 3 * w_size) {
+<span class="token prefix inserted">+</span>        adj_size = min_block_size;
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    } else {
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>        adj_size = d_size * ((size + (d_size) + (d_size - 1)) / d_size);
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        adj_size = ((w_size + size - 1) | 0x7) + 1; // size + header
+</span>...</code></pre>
+<p>Because each free block now needs to hold two pointers, a header, and a footer, the minimum block size has to be increased in order to accommodate one. A constant has been introduced to encode this value. I also decided to change the way that the alignment operation is implemented.</p>
+<p><code>extend_heap</code> and <code>mm_free</code> just need to insert the new free block into the free-list.</p>
+<pre class="language-diff" tabindex="0"><code class="language-diff">static void *extend_heap(size_t size) {
+<span class="token unchanged"><span class="token prefix unchanged"> </span>    size = ((size - 1) | 0x7) + 1;
+<span class="token prefix unchanged"> </span>    char *bp;
+</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>    if ((long)(bp = mem_sbrk(size)) == -1)
+<span class="token prefix unchanged"> </span>        return NULL;
+</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>    put(header(bp), pack(size, 0));
+<span class="token prefix unchanged"> </span>    put(footer(bp), pack(size, 0));
+<span class="token prefix unchanged"> </span>    put(header(next_block_pointer(bp)), pack(0, 1));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    bp = coalesce(bp);
+<span class="token prefix inserted">+</span>    insert_node((free_node_t *)bp);
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    return coalesce(bp);
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    return bp;
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>}
+</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>void mm_free(void *bp) {
+<span class="token prefix unchanged"> </span>    size_t size = get_size(header(bp));
+</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>    put(header(bp), pack(size, 0));
+<span class="token prefix unchanged"> </span>    put(footer(bp), pack(size, 0));
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    coalesce(bp);
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    bp = coalesce(bp);
+<span class="token prefix inserted">+</span>    insert_node(bp);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>}
+</span></code></pre>
+<p><code>coalesce</code> is now responsible for removing consolidated blocks from the free list.</p>
+<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span>static void *coalesce(char *bp) {
+<span class="token prefix unchanged"> </span>    size_t prev_alloc = get_alloc(footer(prev_block_pointer(bp)));
+<span class="token prefix unchanged"> </span>    size_t next_alloc = get_alloc(header(next_block_pointer(bp)));
+<span class="token prefix unchanged"> </span>    size_t size = get_size(header(bp));
+</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>    if (prev_alloc &amp;&amp; next_alloc)
+<span class="token prefix unchanged"> </span>        return bp;
+<span class="token prefix unchanged"> </span>    else if (prev_alloc &amp;&amp; !next_alloc) {
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>        size += get_size(header(next_block_pointer(bp)));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        char *next_bp = next_block_pointer(bp);
+<span class="token prefix inserted">+</span>        size += get_size(header(next_bp));
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        put(header(bp), pack(size, 0));
+<span class="token prefix unchanged"> </span>        put(footer(bp), pack(size, 0));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        free_node_t *neighbour_node = (free_node_t *)next_bp;
+<span class="token prefix inserted">+</span>        remove_node(neighbour_node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    } else if (!prev_alloc &amp;&amp; next_alloc) {
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>        size += get_size(footer(prev_block_pointer(bp)));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        char *prev_bp = prev_block_pointer(bp);
+<span class="token prefix inserted">+</span>        size += get_size(footer(prev_bp));
+<span class="token prefix inserted">+</span>        free_node_t *prev_node = (free_node_t *)prev_bp;
+<span class="token prefix inserted">+</span>        remove_node(prev_node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        put(footer(bp), pack(size, 0));
+<span class="token prefix unchanged"> </span>        put(header(prev_block_pointer(bp)), pack(size, 0));
+<span class="token prefix unchanged"> </span>        bp = prev_block_pointer(bp);
+<span class="token prefix unchanged"> </span>    } else {
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>        size += get_size(footer(prev_block_pointer(bp))) +
+<span class="token prefix deleted">-</span>                get_size(header(next_block_pointer(bp)));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        char *next_bp = next_block_pointer(bp);
+<span class="token prefix inserted">+</span>        char *prev_bp = prev_block_pointer(bp);
+<span class="token prefix inserted">+</span>        size += get_size(footer(prev_bp))
+<span class="token prefix inserted">+</span>            + get_size(header(next_bp));
+<span class="token prefix inserted">+</span>        free_node_t *prev_node = (free_node_t *)prev_bp;
+<span class="token prefix inserted">+</span>        remove_node(prev_node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        put(header(prev_block_pointer(bp)), pack(size, 0));
+<span class="token prefix unchanged"> </span>        put(footer(next_block_pointer(bp)), pack(size, 0));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        free_node_t *next_node = (free_node_t *)next_bp;
+<span class="token prefix inserted">+</span>        remove_node(next_node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        bp = prev_block_pointer(bp);
+<span class="token prefix unchanged"> </span>    }
+</span>
+<span class="token unchanged"><span class="token prefix unchanged"> </span>    return bp;
+<span class="token prefix unchanged"> </span>}
+</span></code></pre>
+<p><code>place</code> removes allocated blocks from the free-list, and inserts newly split blocks back into it.</p>
+<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span>static void place(void *bp, size_t size) {
+<span class="token prefix unchanged"> </span>    size_t csize = get_size(header(bp));
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    if ((csize - size) >= (2 * d_size)) {
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    if ((csize - size) >= min_block_size) {
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        put(header(bp), pack(size, 1));
+<span class="token prefix unchanged"> </span>        put(footer(bp), pack(size, 1));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        free_node_t *node = (free_node_t *)bp;
+<span class="token prefix inserted">+</span>        remove_node(node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        bp = next_block_pointer(bp);
+<span class="token prefix unchanged"> </span>        put(header(bp), pack(csize - size, 0));
+<span class="token prefix unchanged"> </span>        put(footer(bp), pack(csize - size, 0));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        free_node_t *new_node = (free_node_t *)bp;
+<span class="token prefix inserted">+</span>        insert_node(new_node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    } else {
+<span class="token prefix unchanged"> </span>        put(header(bp), pack(csize, 1));
+<span class="token prefix unchanged"> </span>        put(footer(bp), pack(csize, 1));
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        free_node_t *node = (free_node_t *)bp;
+<span class="token prefix inserted">+</span>        remove_node(node);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    }
+<span class="token prefix unchanged"> </span>}
+</span></code></pre>
+<p>An important lesson that I keep having to relearn is <a href="http://www.laputan.org/mud/mud.html#KeepItWorking">keep it working</a>.  You can implement all the supporting code for the explicit-free list without touching the implicit free-list code at all. None of the code-changes mentioned so far have actually changed any of the behavior of the code at all except for maintaining this, currently inconsequential, data structure, and increasing the minimum block size by 8 bytes. We're still running a working implicit free-list.</p>
+<p>The final code change is to then switch the <code>find_fit</code> function from traversing the list by block size to traversing the linked-list data structure we just implemented.</p>
+<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span>static void *find_fit(size_t size) {
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    char *bp;
+<span class="token prefix deleted">-</span>    for (bp = heap_listp;
+<span class="token prefix deleted">-</span>         get_size(header(bp)) > 0;
+<span class="token prefix deleted">-</span>         bp = next_block_pointer(bp)
+<span class="token prefix deleted">-</span>    ) {
+<span class="token prefix deleted">-</span>        if (!get_alloc(header(bp))
+<span class="token prefix deleted">-</span>            &amp;&amp; (size &lt;= get_size(header(bp)))
+<span class="token prefix deleted">-</span>        ) {
+<span class="token prefix deleted">-</span>            heapcheck(__LINE__);
+<span class="token prefix deleted">-</span>            return bp;
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    for (free_node_t *node = free_list;
+<span class="token prefix inserted">+</span>         node;
+<span class="token prefix inserted">+</span>         node = node->next
+<span class="token prefix inserted">+</span>    ) {
+<span class="token prefix inserted">+</span>        if (size &lt;= get_size(header((char *)node))) {
+<span class="token prefix inserted">+</span>            return node;
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        }
+<span class="token prefix unchanged"> </span>    }
+<span class="token prefix unchanged"> </span>}
+</span></code></pre>
+<p>In reality, I didn't actually do it like that. I made many ill-considered changes that left me with a hard-to-debug broken allocator, and I ran <code>git restore mm.c</code> at least a few times. So let that be a lesson: keep it working.</p>
+<p>With the explicit free-list done, let's run the autograder and measure our performance:
+<strong>LIFO</strong>:</p>
+<pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
+trace  valid  util     ops      secs  Kops/sec
+ 0       yes   89%    5694  0.000093 61160
+ 1       yes   91%    5848  0.000058100309
+ 2       yes   94%    6648  0.000160 41524
+ 3       yes   97%    5380  0.000125 42971
+ 4       yes   66%   14400  0.000065221880
+ 5       yes   89%    4800  0.000305 15722
+ 6       yes   88%    4800  0.000307 15615
+ 7       yes   55%   12000  0.000988 12143
+ 8       yes   51%   24000  0.001298 18489
+ 9       yes   27%   14401  0.025642   562
+10       yes   30%   14401  0.001027 14020
+Total          71%  112372  0.030070  3737
+
+Perf index = 42 (util) + 5 (thru) = 47/100</code></pre>
+<p><strong>FIFO</strong>:</p>
+<pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
+trace  valid  util     ops      secs  Kops/sec
+ 0       yes   98%    5694  0.000062 92435
+ 1       yes   96%    5848  0.000065 90667
+ 2       yes   98%    6648  0.000073 90449
+ 3       yes   99%    5380  0.000051106324
+ 4       yes   66%   14400  0.000064224299
+ 5       yes   92%    4800  0.000741  6474
+ 6       yes   91%    4800  0.000664  7225
+ 7       yes   55%   12000  0.007343  1634
+ 8       yes   51%   24000  0.034446   697
+ 9       yes   27%   14401  0.026885   536
+10       yes   30%   14401  0.001033 13945
+Total          73%  112372  0.071427  1573
+
+Perf index = 44 (util) + 2 (thru) = 46/100</code></pre>
+<p>Now, while the dramatic difference between the two is somewhat surprising (the fact that the slowest traces are the ones that do the most calls to realloc might be part of the story here), I am not at all surpised that the LIFO version comes out ahead, and the reason for that is locality.</p>
+<p>Locality is simply the idea that memory that has been accessed once, will most likely be accessed again, and when one block of memory gets accessed, its neighboring blocks will most likely be accessed too. Thus, code that exhibits high locality, will access the same memory frequently, and access contiguous blocks of memory in sequence. This has performance implications due the way the CPU cache works. Simply put code with good locality will have fewer cache misses, resulting in faster memory access.</p>
+<p>Arguably, blocks of memory that have been <em>freed</em> more recently, are also more likely to have been <em>used</em> more recently. As a result, they then more likely to be present in lower (faster) levels of cache memory. Given that LIFO allocates the most recently freed blocks, and FIFO allocates the least recently freed blocks, it would come as a surprise, if LIFO interacts better with the CPU caches and is faster as a result.</p>
+<p>This is still a linear search, however. A linear search on a smaller n, but linear nonetheless. We can do better.</p>
+<h2 id="but-first-its-time-to-stop-cheating">But first, it's time to stop cheating</h2>
+<p>Unfortunately there's a fundamental problem with treating this as a portable, general-purpose allocator, and that is that the header data has been encoded in an <code>unsigned int</code>, which is a 32-bit value on x86 and x64. This is an artifact from following the textbook-implementation from earlier. While this would be totally ok if we restrict ourselves to making an allocator for a 32-bit system, it feels a bit like cheating, because it allows us to pack the headers more closely.</p>
+<p>For the autograder, this is no problem, because the autograder's heap is limited to 20MB, a size that fits well within a 32-bit unsigned integer, and thus it has not caused any problems so far. However, this is supposed to be a general-purpose allocator, and it's honestly an interesting exercise to make it work the same on both 32-bit and 64-bit architectures.</p>
+<p><code>size_t</code> is an unsigned integer data type in C used to represent the size of an object. Since an object, in theory, could be as large as the entire virtual address space, <code>size_t</code> needs to be able to accommodate a size that is at least as large (at least, I assume this to be the case, I haven't actually looked that up). As such, <code>size_t</code> is 4 bytes on x86, and 8 bytes on x64. From this point onward, block metadata is represented using a <code>size_t</code> instead of an <code>unsigned int</code>.</p>
+<pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
+trace  valid  util     ops      secs  Kops
+ 0       yes   89%    5694  0.000114 49904
+ 1       yes   92%    5848  0.000070 83782
+ 2       yes   94%    6648  0.000172 38696
+ 3       yes   96%    5380  0.000122 43954
+ 4       yes   66%   14400  0.000084172249
+ 5       yes   86%    4800  0.000301 15942
+ 6       yes   85%    4800  0.000278 17266
+ 7       yes   51%   12000  0.003027  3964
+ 8       yes   50%   24000  0.001738 13811
+ 9       yes   26%   14401  0.026118   551
+10       yes   38%   14401  0.000971 14831
+Total          70%  112372  0.032995  3406
+
+Perf index = 42 (util) + 5 (thru) = 47/100</code></pre>
+<p>Only a minor performance hit.</p>
+<p>A small optimization that was done in conjunction with this change was removing the footer from allocated blocks, and encoding whether the previous block was allocated in a bit-field in the header. The advantage of doing this is arguably pretty small.</p>
+<h2 id="third-iteration-segregated-free-list">Third iteration: segregated free-list</h2>
+<p>Let's finally address the linear search of the free-list. What if, instead of searching the entire free-list for a block of appropriate size, we eliminate every block that is guaranteed to be too small, and only search blocks that are either of similar size or larger. This is where the segregated free-list comes in.</p>
+<p>The idea is that instead of having just one free-list, we have an array of free-lists, where each list has its own size-class.</p>
+<p><img src="segregated-free.png" alt="Diagram showcasing a segregated free-list"></p>
+<p>By having each size-class be a power of two, we can allocate an array of <code>w_bits</code> pointers to a free list, where <code>w_bits</code> is the number of bits in a <code>size_t</code>. This way, we can calculate the size class of a given node or requested size by taking the floored base 2 logarithm of the given size. Given that the minimum block size is 4, the log base 2 of which is 2, we could in theory eliminate size class 0 and 1 from the array, but we only eliminate size class 0.</p>
+<p>All we have to do to our free-list data structure is take the log base 2
+of the size to calculate the index into the free-list array, and then insert the node into the
+correct free-list like before.</p>
+<p>Then all we need to do is allocate some extra space on the heap for the array of free-lists and initialize it to 0 in <code>mm_init</code> and update <code>find_fit</code>.</p>
+<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span>static void *find_fit(size_t size) {
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    for (free_node_t *node = free_list;
+<span class="token prefix deleted">-</span>         node;
+<span class="token prefix deleted">-</span>         node = node->next
+<span class="token prefix deleted">-</span>    ) {
+<span class="token prefix deleted">-</span>        if (size &lt;= get_size(header((char *)node))) {
+<span class="token prefix deleted">-</span>            return node;
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    size_t i = log2_of(size) - 1;
+<span class="token prefix inserted">+</span>    while (i &lt; w_bits) {
+<span class="token prefix inserted">+</span>        for (free_node_t *node = free_lists[i];
+<span class="token prefix inserted">+</span>             node;
+<span class="token prefix inserted">+</span>             node = node->next
+<span class="token prefix inserted">+</span>        ) {
+<span class="token prefix inserted">+</span>            if (size &lt;= get_size(header((char *)node))) {
+<span class="token prefix inserted">+</span>                return node;
+<span class="token prefix inserted">+</span>            }
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>        }
+</span><span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>        i++;
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    }
+<span class="token prefix unchanged"> </span>    return NULL;
+<span class="token prefix unchanged"> </span>}
+</span></code></pre>
+<p>(yes, the outer loop could have been a for-loop too)</p>
+<p>And that's all there is to it. Let's see how it compares.</p>
+<pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
+trace  valid  util     ops      secs  Kops
+ 0       yes   98%    5694  0.000098 57925
+ 1       yes   97%    5848  0.000111 52590
+ 2       yes   99%    6648  0.000126 52846
+ 3       yes   99%    5380  0.000099 54343
+ 4       yes   65%   14400  0.000198 72691
+ 5       yes   92%    4800  0.000180 26652
+ 6       yes   90%    4800  0.000174 27602
+ 7       yes   55%   12000  0.000163 73620
+ 8       yes   50%   24000  0.000303 79156
+ 9       yes   25%   14401  0.026707   539
+10       yes   16%   14401  0.001766  8156
+Total          71%  112372  0.029926  3755
+
+Perf index = 43 (util) + 5 (thru) = 48/100</code></pre>
+<p>At a glance, that looks like a pretty minor improvement, but look at trace 9. What's going on with that?</p>
+<h2 id="a-second-look-at-realloc">A second look at <code>realloc</code></h2>
+<p>Well, trace 9 is called <code>realloc-bal.rep</code> which should give you a hint. Recall that we haven't touched <code>mm_realloc</code> <em>at all</em> so far, and it is a guaranteed call to <code>memcpy</code>, which certainly <em>sounds</em> expensive. So let's try to optimize that.</p>
+<p>The requirements state that we only need to return <em>a</em> pointer to block of memory of the requested size with the old data available. It doesn't say it has to be a <em>different</em> pointer, and if we can return the <em>same</em> pointer, than we don't have to <code>memcpy</code>, not to mention the associated calls to <code>mm_malloc</code> and <code>mm_free</code>.</p>
+<p>There are two cases we have to care about:</p>
+<ol>
+<li>The requested size + header is equal to or less than the currently allocated block size.</li>
+<li>The requested size + header is larger than the currently allocated block size.</li>
+</ol>
+<p>Case 1 is trivial. We simply return the same pointer and do nothing. We could try to split to create a free block of memory, but that appeared to make utilization <em>worse</em>, not <em>better</em>.</p>
+<p>In case 2, we can avoid the reallocation and copying by coalescing with the next block of memory on the condition that it is not already allocated.</p>
+<pre class="language-diff" tabindex="0"><code class="language-diff"><span class="token unchanged"><span class="token prefix unchanged"> </span>void *mm_realloc(void *bp, size_t size) {
+<span class="token prefix unchanged"> </span>    void *oldptr = bp;
+</span>
+<span class="token inserted-sign inserted"><span class="token prefix inserted">+</span>    size_t block_size = get_size(header(oldptr));
+<span class="token prefix inserted">+</span>    if (size + w_size &lt; block_size) {
+<span class="token prefix inserted">+</span>        return oldptr;
+<span class="token prefix inserted">+</span>    } else if (size &lt; block_size) {
+<span class="token prefix inserted">+</span>        size = block_size;
+<span class="token prefix inserted">+</span>    }
+<span class="token prefix inserted">+</span>
+<span class="token prefix inserted">+</span>    char *next_bp = next_block_pointer(bp);
+<span class="token prefix inserted">+</span>    size_t next_alloc = get_alloc(header(next_bp));
+<span class="token prefix inserted">+</span>    size_t next_size = get_size(header(next_bp));
+<span class="token prefix inserted">+</span>    if (!next_alloc &amp;&amp; size + w_size &lt;= block_size + next_size) {
+<span class="token prefix inserted">+</span>        block_size += next_size;
+<span class="token prefix inserted">+</span>        put(header(bp), pack(block_size, 1));
+<span class="token prefix inserted">+</span>        remove_node((free_node_t *)next_bp);
+<span class="token prefix inserted">+</span>        set_prev_alloc(header(next_block_pointer(bp)), 1);
+<span class="token prefix inserted">+</span>        heapcheck(__LINE__);
+<span class="token prefix inserted">+</span>        return bp;
+<span class="token prefix inserted">+</span>    }
+<span class="token prefix inserted">+</span>
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    void *newptr = mm_malloc(size);
+<span class="token prefix unchanged"> </span>    if (newptr == NULL)
+<span class="token prefix unchanged"> </span>        return NULL;
+</span><span class="token deleted-sign deleted"><span class="token prefix deleted">-</span>    size_t copy_size = get_size(header(oldptr)) - w_size;
+<span class="token prefix deleted">-</span>    if (size &lt; copy_size)
+<span class="token prefix deleted">-</span>        copy_size = size;
+<span class="token prefix deleted">-</span>    memcpy(newptr, oldptr, copy_size);
+</span><span class="token unchanged"><span class="token prefix unchanged"> </span>    memcpy(newptr, oldptr, block_size);
+<span class="token prefix unchanged"> </span>    mm_free(oldptr);
+<span class="token prefix unchanged"> </span>    return newptr;
+<span class="token prefix unchanged"> </span>}
+</span></code></pre>
+<p>Let's see how that performs.</p>
+<pre class="language-txt" tabindex="0"><code class="language-txt">Results for mm malloc:
+trace  valid  util     ops      secs  Kops
+ 0       yes   98%    5694  0.000121 47136
+ 1       yes   97%    5848  0.000123 47622
+ 2       yes   99%    6648  0.000148 44858
+ 3       yes   99%    5380  0.000125 43213
+ 4       yes   64%   14400  0.000157 91778
+ 5       yes   92%    4800  0.000199 24169
+ 6       yes   90%    4800  0.000194 24793
+ 7       yes   55%   12000  0.000196 61224
+ 8       yes   50%   24000  0.000339 70734
+ 9       yes   46%   14401  0.000165 87120
+10       yes   66%   14401  0.000123117463
+Total          78%  112372  0.001889 59500
+
+Perf index = 47 (util) + 40 (thru) = 87/100</code></pre>
+<p>Ok then. I appear to have made a malloc that is twice as fast as libc-malloc.</p>
+<p>But that's not really a fair comparison. For one, this implementation is evaluated against a small set of mostly synthetic allocation patterns, which is not necessarily representative of the kinds of allocation patterns a real-world allocator would have to face.</p>
+<p>Secondly, my allocator is not thread-safe. If a multi-threaded program were to use my allocator from concurrent threads, disastrous things would likely happen.</p>
+<p>And finally, libc-malloc likely does a lot of work to maximize memory utilization that my allocator doesn't do, especially to guard against what one might call pathological allocation patterns. You may notice that while the average memory-utilization of my own allocator is <em>ok</em>, the utilization shown in some of these traces is downright <em>catastrophic</em>. 50% utilization is simply not ok, unless you're allocating single <code>size_t</code>'s almost exclusively.</p>
+<h2 id="so-what-did-we-learn">So what did we learn</h2>
+<p>Arguably the purpose of this exercise is not for me to write my own general-purpose allocator for a general-purpose widely used operating system. I can't write a better allocator than libc, and I don't need to.</p>
+<p>However, that doesn't mean it was at all pointless. There are many reasons one might want to learn how to reinvent the wheel. Here are a few:</p>
+<ol>
+<li><strong>Learning how to implement a simplified version of malloc, improves my understanding of how to use the malloc that is installed on my operating system</strong>. This goes for all things programming in my opinion. If you learn how to build the thing, even if it's a toy version of the thing, you get better at using the real thing. You get a deeper understanding of what its capabilities are, what kinds of things can go wrong, and how to mitigate them.</li>
+<li><strong>Sometimes you might actually find yourself needing to write your own memory allocator.</strong> This is the case more so in the embedded world than not, but it does also apply to userspace applications running in OS'es like Linux. A common use case that is brought up in the textbook, for instance, is graph data structures, where the program might request a large block of memory from malloc, and then use its own purpose-built allocator to manage allocations within that block.</li>
+<li><strong>I gain a deeper understanding of the security implications of memory bugs.</strong> It is a well-known fact that memory bugs make up one of the largest classes of security vulnerabilities in the wild. Many of these are related to overflowing string buffers, but a large amount is also related to use-after-free bugs and double-free bugs. Now that I know how memory allocation works under the hood, I have a much stronger mental model of <em>why</em> these things can be security vulnerabilities, and I think that's important too, if I want to be someone writing safe software.</li>
+</ol>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/blog/data-wrangling/">we do a little data wrangling</a></li><li class="links-nextprev-next">Next →<br><a href="/blog/run-xv6-ostep/">Running and debugging xv6 for OSTEP in a Docker container</a></li>
+</ul>
+<meta name="fediverse:creator" content="@0x1eaf@girlcock.club">
+
+			</heading-anchors>
+		</main>
+
+		<!-- This page `/blog/malloc/` was built on 2025-12-15T06:08:29.276Z -->
+		<script type="module" src="/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

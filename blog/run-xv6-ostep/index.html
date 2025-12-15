@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Running and debugging xv6 for OSTEP in a Docker container</title>
+		<meta name="description" content="Side-stepping the issue of running old xv6 on a newer platform, by running it on an older platform instead.">
+		<link rel="alternate" href="feed/feed.xml" type="application/atom+xml" title="0x1eaf">
+
+		<meta name="generator" content="Eleventy v3.1.2">
+		<style>/*
+ Gruvbox theme adapted from:
+
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+GRUVBOX HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #fbf1c7; /* base00 */
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+	background: #504945; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+	background: #504945; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background-color: #3c3836; /* bg1 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #a89984; /* fg4 */
+}
+
+.token.punctuation {
+	color: #ebdbb2; /* fg1 */
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #fe8019; /* orange */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+	color: #b8bb26; /* green */
+}
+
+.token.entity {
+	color: #a89984; /* base00 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+	color: #fabd2f; /* green */
+}
+
+.token.function,
+.token.class-name {
+	color: #83a598; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+	color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}
+/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, monospace;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #fbf1c7;
+	--color-gray-50: #ebdbb2;
+	--color-gray-90: #bdae93;
+
+		--background-color: #282828;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #98971a;
+	--text-color-link-active: #d79921;
+	--text-color-link-visited: #b8bb26;
+
+	--syntax-tab-size: 2;
+}
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family-monospace);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 40em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img {
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+header:after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+  background-color: #3c3836;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em .5em;
+	flex-wrap: wrap;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+	margin-right: 2em;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+	margin-right: 1em;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}</style>
+	</head>
+	<body>
+		<a href="#skip" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/" class="home-link">0x1eaf</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/">home</a></li>
+					<li class="nav-item"><a href="/blog/">blog</a></li>
+					<li class="nav-item"><a href="/cv/">cv</a></li>
+					<li class="nav-item"><a href="/ossu/progress/">ossu progress</a></li>
+					<li class="nav-item"><a href="/feed/feed.xml">rss/atom</a></li>
+					<li class="github"><a href="https://github.com/luccaflower">github</a>
+				</li></ul>
+			</nav>
+		</header>
+
+		<main id="skip">
+			<heading-anchors>
+				
+<h1 id="running-and-debugging-xv6-for-ostep-in-a-docker-container">Running and debugging xv6 for OSTEP in a Docker container</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2025-07-07">07 July 2025</time></li>
+	<li><a href="/tags/programming/" class="post-tag">programming</a>, </li>
+	<li><a href="/tags/computer-systems/" class="post-tag">computer systems</a>, </li>
+	<li><a href="/tags/ossu/" class="post-tag">ossu</a></li>
+</ul>
+<hr><strong>Side-stepping the issue of running old xv6 on a newer platform, by running it on an older platform instead.</strong>
+
+<p><a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">Operating Systems: Three Easy Pieces</a> by Remzi and Andrea Arpaci-Dusseau is a free online textbook, that teaches fundamental operating system concepts. It's a great read (at least it has been so far), written in a very approachable style. As a companion to the textbook, Remzi has published several <a href="https://github.com/remzi-arpacidusseau/ostep-projects">programming projects</a>, many of which involve hacking on <a href="https://pdos.csail.mit.edu/6.828/2012/xv6.html">xv6</a>, a minimal teaching operating system based on UNIX, developed by MIT.</p>
+<p>The issue you might encounter, if you try to do these projects, is that the version of xv6 used in OSTEP is the x86-version of xv6, which was discontinued in 2018 after MIT decided to move the xv6 project over to RISC-V. While you might be able to <em>build</em> the project on a modern machine by disabling the <code>-Werror</code> compiler flag, running it in QEMU may be a different story, at least out of the box. On my machine running Arch Linux, QEMU hangs with the following message:</p>
+<pre class="language-txt" tabindex="0"><code class="language-txt">SeaBIOS (version Arch Linux 1.16.3-1-1)
+
+
+iPXE (http://ipxe.org) 00:03.0 C900 PCI2.10 PnP PMM+1EFD3360+1EF33360 C900
+                                                                               
+
+
+Booting from Hard Disk..</code></pre>
+<p>No good.</p>
+<p>Fortunately, it's fairly easy to set up and environment that is of the era (circa 2018), using either virtual machines or containerization.</p>
+<p>Because I like to stay in the terminal as much as possible, and because the xv6 Makefile includes targets for running QEMU without a GUI, I decided to go with a Docker container based on Ubuntu 18.04, which is the LTS version of the time. In order to run the projects, you need various build tools included in the build-essentials package, as well as QEMU (obviously), gawk,  GDB for debugging, and finally expect, which is used by the project testing script:</p>
+<pre class="language-Dockerfile" tabindex="0"><code class="language-Dockerfile">FROM ubuntu:18.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get -yq update && apt-get -yq install --no-install-recommends \ 
+    build-essential qemu gawk expect gdb</code></pre>
+<p>The DEBIAN_FRONTEND variable is necessary to avoid the package manager asking for user input during install. Save that file with the name &quot;Dockerfile&quot;.</p>
+<p>Now go ahead and build that image, and give it a nice descriptive name such as, say, &quot;xv6-dev&quot; by running the following command in the same directory as your Dockerfile:</p>
+<pre class="language-sh" tabindex="0"><code class="language-sh"><span class="token function">docker</span> build <span class="token parameter variable">-t</span> xv6-dev <span class="token builtin class-name">.</span></code></pre>
+<p>With that, we now have an image that we can use to build, run, and even debug xv6 in QEMU.</p>
+<h2 id="so-how-do-i-use-this-thing">So how do I use this thing?</h2>
+<p>Obviously a container image is no good if you don't know how to use it. Here's how.</p>
+<p>First, let's assume you're working on a project such as <a href="https://github.com/remzi-arpacidusseau/ostep-projects/tree/master/initial-xv6">initial-xv6</a>, and you've checked out the xv6 repo into a directory named &quot;src&quot;:</p>
+<pre class="language-sh" tabindex="0"><code class="language-sh"><span class="token comment">#inside the initial-xv6 directory</span>
+<span class="token function">git</span> clone https://github.com/mit-pdos/xv6-public.git src</code></pre>
+<p>In that case, navigate to the src directory and run the following:</p>
+<pre class="language-sh" tabindex="0"><code class="language-sh"><span class="token function">docker</span> run <span class="token parameter variable">--rm</span> <span class="token parameter variable">-it</span> <span class="token parameter variable">-v</span> <span class="token variable"><span class="token variable">$(</span><span class="token builtin class-name">pwd</span><span class="token variable">)</span></span>:/xv6 <span class="token parameter variable">--workdir</span> /xv6 <span class="token parameter variable">-p</span> <span class="token string">"25000:25000"</span> xv6-dev /bin/bash</code></pre>
+<p>A quick explanation of the command line arguments:</p>
+<ul>
+<li><code>--rm</code>: removes the container after it stops</li>
+<li><code>-it</code>: let's you interact with a terminal inside the container</li>
+<li><code>-v $(pwd):/xv6</code>: mounts the present working directory to <code>/xv6</code> inside the container</li>
+<li><code>--workdir /xv6</code>: sets the present working directory of the container to <code>/xv6</code></li>
+<li><code>-p &quot;25000:25000&quot;</code>: maps port 25000 of the host to port 25000 of the container.
+Now you should be ready to build, run, and debug.</li>
+</ul>
+<h2 id="building-running-and-debugging-xv6">Building, running, and debugging xv6</h2>
+<p>The xv6 Makefile defines several targets for not just building but also running the project inside QEMU, including targets with &quot;nox&quot; (for &quot;No X (Server)&quot;) in their name, which are used for non-graphical environments. Our Docker container is a non-graphical environment, so that's perfect!</p>
+<p>The eagle-eyed will have noticed that we expose port 25000 on the Docker container and wonder why. That is because the gdb-targets in the Makefile start a gdbserver listening on port 25000, which you can use to remotely debug the kernel using gdb on your host OS.</p>
+<p>Running xv6 inside QEMU is as simple as running the following command:</p>
+<pre class="language-sh" tabindex="0"><code class="language-sh"><span class="token function">make</span> qemu-nox</code></pre>
+<p>You know it's working if you see the following prompt:</p>
+<pre class="language-txt" tabindex="0"><code class="language-txt">xv6...
+cpu1: starting 1
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ </code></pre>
+<p>Debugging is a bit more involved, but not that difficult.
+Inside the container run the following:</p>
+<pre class="language-sh" tabindex="0"><code class="language-sh"><span class="token function">make</span> qemu-nox-gdb</code></pre>
+<p>Your output should look a lot like this:</p>
+<pre class="language-txt" tabindex="0"><code class="language-txt">sed "s/localhost:1234/localhost:25000/" &lt; .gdbinit.tmpl > .gdbinit
+*** Now run 'gdb'.
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 2 -m 512  -S -gdb tcp::25000</code></pre>
+<p>Now on your host OS, navigate to the same <code>src</code> folder that xv6 is in, and run:</p>
+<pre class="language-sh" tabindex="0"><code class="language-sh">gdb kernel</code></pre>
+<p>Inside gdb, run <code>target remote localhost:25000</code>. This will connect your gdb client to the gdbserver that's running inside the container. Go ahead and set a breakpoint in main continuing execution. It should stop right at the beginning of main:</p>
+<pre class="language-txt" tabindex="0"><code class="language-txt">(gdb) target remote localhost:25000
+Remote debugging using localhost:25000
+0x0000fff0 in ?? ()
+(gdb) break main
+Breakpoint 1 at 0x80102ea0: file main.c, line 19.
+(gdb) c
+Continuing.
+
+Thread 1 hit Breakpoint 1, main () at main.c:19
+19	{
+(gdb) </code></pre>
+<p>And there you have it. You are now ready to debug your kernel hacking shenanigans.</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/blog/malloc/">What I learned from re-implementing Malloc</a></li>
+</ul>
+<meta name="fediverse:creator" content="@0x1eaf@girlcock.club">
+
+			</heading-anchors>
+		</main>
+
+		<!-- This page `/blog/run-xv6-ostep/` was built on 2025-12-15T06:08:29.276Z -->
+		<script type="module" src="/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>
