@@ -60,4 +60,9 @@
 		<loc>https://0x1eaf.dev/feed/feed.xml</loc>
 		<lastmod>2025-12-16</lastmod>
 	</url>
+	
+	<url>
+		<loc>https://0x1eaf.dev/blog/missing-race-condition/</loc>
+		<lastmod>2025-12-16</lastmod>
+	</url>
 </urlset>

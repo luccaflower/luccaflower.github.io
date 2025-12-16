@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>The Case of the Missing Race Condition</title>
+		<meta name="description" content="Stop being correct dammit!">
+		<link rel="alternate" href="feed/feed.xml" type="application/atom+xml" title="0x1eaf">
+
+		<meta name="generator" content="Eleventy v3.1.2">
+		<style>/*
+ Gruvbox theme adapted from:
+
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+GRUVBOX HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #fbf1c7; /* base00 */
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+	background: #504945; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+	background: #504945; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background-color: #3c3836; /* bg1 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #a89984; /* fg4 */
+}
+
+.token.punctuation {
+	color: #ebdbb2; /* fg1 */
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #fe8019; /* orange */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+	color: #b8bb26; /* green */
+}
+
+.token.entity {
+	color: #a89984; /* base00 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+	color: #fabd2f; /* green */
+}
+
+.token.function,
+.token.class-name {
+	color: #83a598; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+	color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}
+/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, monospace;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #fbf1c7;
+	--color-gray-50: #ebdbb2;
+	--color-gray-90: #bdae93;
+
+		--background-color: #282828;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #98971a;
+	--text-color-link-active: #d79921;
+	--text-color-link-visited: #b8bb26;
+
+	--syntax-tab-size: 2;
+}
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family-monospace);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 40em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img {
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+header:after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+  background-color: #3c3836;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em .5em;
+	flex-wrap: wrap;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+	margin-right: 2em;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+	margin-right: 1em;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}</style>
+	</head>
+	<body>
+		<a href="#skip" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/" class="home-link">0x1eaf</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/">home</a></li>
+					<li class="nav-item"><a href="/blog/">blog</a></li>
+					<li class="nav-item"><a href="/cv/">cv</a></li>
+					<li class="nav-item"><a href="/ossu/progress/">ossu progress</a></li>
+					<li class="nav-item"><a href="/feed/feed.xml">rss/atom</a></li>
+					<li class="github"><a href="https://github.com/luccaflower">github</a>
+				</li></ul>
+			</nav>
+		</header>
+
+		<main id="skip">
+			<heading-anchors>
+				
+<h1 id="the-case-of-the-missing-race-condition">The Case of the Missing Race Condition</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2025-12-16">16 December 2025</time></li>
+	<li><a href="/tags/programming/" class="post-tag">programming</a>, </li>
+	<li><a href="/tags/computer-systems/" class="post-tag">computer systems</a>, </li>
+	<li><a href="/tags/operating-systems/" class="post-tag">operating systems</a></li>
+</ul>
+<hr><strong>Stop being correct dammit!</strong>
+
+<p>One of the more interesting programming projects for the <a href="https://pages.cs.wisc.edu/~remzi/OSTEP/">OSTEP</a> book is the <a href="https://github.com/remzi-arpacidusseau/ostep-projects/tree/master/concurrency-xv6-threads#kernel-threads">xv6 Kernel Threads</a>
+project, which has you implement actual multi-threading support for user-level programs in the xv6 kernel, as well as a small library to support it,
+locks and all. From my understanding, this is a very popular type of lab for university courses in Operating Systems, and it is certainly a great project
+for learning the low-level building blocks of concurrent programming.</p>
+<p>Unfortunately, no test code for this project has been released yet, so if you're doing this project on your own, and you
+want to verify the correctness of your work (which you should), then you have to write your own.</p>
+<p>Given the problem statement, it's actually quite straightforward to figure what needs to be verified and how:</p>
+<ol>
+<li>the clone syscall creates a new thread that runs the code at the supplied address</li>
+<li>the new thread shares its memory address space with its parent</li>
+<li>the provided stack address is the same that gets returned from the corresponding join</li>
+<li>the lock provides mutual exclusion and protects against race conditions</li>
+</ol>
+<p>For statements 1 through 3, the verification process requires little more than setting variables and comparing them after a join. Easy.</p>
+<p>The 4th statement is where it gets tricky. Race conditions, as it turns out, can be notoriously tricky to trigger, as they often have critical sections
+(sections within which interleaving becomes a problem) that are just a few instructions in length.</p>
+<p>Not to worry, I have just the thing: one of the most commonly used introductory examples of a data-race is the concurrent loop-counter. Simply run
+<code>count++</code> in a loop, in multiple concurrent threads, where <code>count</code> is a shared variable. Just make sure to mark it <code>volatile</code>, so the compiler doesn't
+trick you with a <code>mov $count_addr %eax, add $loop_count %eax, mov %eax $count_addr</code>.</p>
+<p>Whenever I've run these examples natively, it has never taken more than a count of a few thousand across 2-4 threads to get a final count that's totally
+wrong, especially on a multi-core CPU. So surely, it shouldn't be too hard to make the same thing happen inside xv6, right?</p>
+<p>So that's the idea. Have some piece of code that definitely triggers the race-condition, and then have the same piece of code, but use
+a lock to protect against the race condition, and verify that it has been resolved.</p>
+<p>The test code for triggering the race-condition is dead simple, of course:</p>
+<pre class="language-c" tabindex="0"><code class="language-c">
+<span class="token keyword">void</span>
+<span class="token function">counter</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>arg1<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span>arg2<span class="token punctuation">)</span>
+<span class="token punctuation">{</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> LOOPS<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    count<span class="token operator">++</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token function">exit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token comment">/* ---- ... ---- */</span>
+
+<span class="token comment">/* --- main --- */</span>
+  <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"counter: [loops=%d threads=%d expected=%d]\n"</span><span class="token punctuation">,</span> LOOPS<span class="token punctuation">,</span> THREADS<span class="token punctuation">,</span> LOOPS <span class="token operator">*</span> THREADS<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"counting without locks\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"starting count...\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  count <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>
+  <span class="token keyword">int</span> spawned<span class="token punctuation">[</span>THREADS<span class="token punctuation">]</span><span class="token punctuation">;</span>
+  <span class="token keyword">int</span> joined<span class="token punctuation">[</span>THREADS<span class="token punctuation">]</span><span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> THREADS<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    spawned<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">Thread_create</span><span class="token punctuation">(</span>counter<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span>i<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span><span class="token punctuation">)</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> THREADS<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    joined<span class="token punctuation">[</span>i<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token function">Thread_join</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"\nspawned: [ "</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> THREADS<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"%d "</span><span class="token punctuation">,</span> spawned<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"]\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"joined:  [ "</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> THREADS<span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"%d "</span><span class="token punctuation">,</span> joined<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+  <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"]\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"count: %d\n"</span><span class="token punctuation">,</span> count<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">if</span> <span class="token punctuation">(</span>count <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"FAILURE: threads never started\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">exit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>count <span class="token operator">!=</span> THREADS <span class="token operator">*</span> LOOPS<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"race condition! (this is ok)\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"no race condition? odd...\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"not a critical failure, but might indicate a problem with the thread implementation\n"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+</code></pre>
+<pre class="language-txt" tabindex="0"><code class="language-txt">counter: [loops=500000000 threads=4 expected=2000000000]
+counting without locks
+starting count...
+
+spawned: [ 8 9 10 11 ]
+joined:  [ 9 11 10 8 ]
+count: 2000000000
+no race condition? odd...</code></pre>
+<p>Oh no.</p>
+<p>So what's happening here? Did I do something wrong when implementing threads? Set up the stack wrong? Sharing registers? Well, those things  would
+cause things to go wrong in entirely different, and far more dramatic ways than simply &quot;the count isn't wrong and it's supposed to be wrong&quot;.</p>
+<p>Maybe it's the scheduler! Maybe the thread somehow runs to completion before it ever gets interrupted, thus never triggering the race condition!</p>
+<p>I tried so many things. I added print-statements in the scheduler to see if the threads got scheduled more than once (they did),
+I tried using up to 32 threads, I tried adding CPU's to QEMU, I tried using arrays of count-variables to increase the likelyhood of bad interrupts,
+I even modified the code that sets the timer interrupt vectors in order to reduce the timer and increase the amount of interrupts, but all <em>that</em>
+accomplished was slowing down the operating system.</p>
+<p>I chalked it up to quirks of the emulation (Professor Remzi appears to agree), and decided on a new approach: <code>printf</code>.</p>
+<p>As it turns out, xv6-printf is <em>not</em> thread-safe. That makes sense, why would there be user-level thread-safety with no support for, well, threads?
+But it gets even better. It turns out, that for every printed character, printf invokes a <code>write</code>-syscall of 1 byte, causing an interrupt. What this
+means for our testing is, if we use printf in multiple concurrent threads, we get a critical section of code with guaranteed interrupts.
+That is <em>exactly</em> what is needed.</p>
+<p>I made three simple routines. One with no lock, one which locks for the whole loop, and one which locks for each call to printf:</p>
+<pre class="language-c" tabindex="0"><code class="language-c"><span class="token keyword">void</span>
+<span class="token function">print_no_lock</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>arg1<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span>arg2<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">int</span> id <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span>arg1<span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">5</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"[%d] print %d\n"</span><span class="token punctuation">,</span> id<span class="token punctuation">,</span> i<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">exit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+<span class="token keyword">void</span>
+<span class="token function">print_coarse_grained</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>arg1<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span>arg2<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">int</span> id <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span>arg1<span class="token punctuation">;</span>
+    <span class="token class-name">lock_t</span> <span class="token operator">*</span>lock <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">lock_t</span> <span class="token operator">*</span><span class="token punctuation">)</span>arg2<span class="token punctuation">;</span>
+    <span class="token function">lock_acquire</span><span class="token punctuation">(</span>lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">5</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"[%d] print %d\n"</span><span class="token punctuation">,</span> id<span class="token punctuation">,</span> i<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">lock_release</span><span class="token punctuation">(</span>lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token function">exit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">void</span>
+<span class="token function">print_fine_grained</span><span class="token punctuation">(</span><span class="token keyword">void</span> <span class="token operator">*</span>arg1<span class="token punctuation">,</span> <span class="token keyword">void</span> <span class="token operator">*</span>arg2<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token keyword">int</span> id <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span>arg1<span class="token punctuation">;</span>
+    <span class="token class-name">lock_t</span> <span class="token operator">*</span>lock <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">lock_t</span> <span class="token operator">*</span><span class="token punctuation">)</span>arg2<span class="token punctuation">;</span>
+    <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> <span class="token number">5</span><span class="token punctuation">;</span> i<span class="token operator">++</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+        <span class="token function">lock_acquire</span><span class="token punctuation">(</span>lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">printf</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"[%d] print %d\n"</span><span class="token punctuation">,</span> id<span class="token punctuation">,</span> i<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token function">lock_release</span><span class="token punctuation">(</span>lock<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token punctuation">}</span>
+    <span class="token function">exit</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></code></pre>
+<p>And let's see those results:</p>
+<pre class="language-txt" tabindex="0"><code class="language-txt">First, print without locking
+[0] print 0
+[0] print 1
+...
+[1] [2] print 0
+pri[nt[2] 3] print 0
+[3] print 1
+...
+[2] print 4
+Print coarsely grained with an initialized lock (lines may not interleave between threads)
+[0] print 0
+[0] print 1
+[0] print 2
+[0] print 3
+[0] print 4
+...
+[3] print 4
+Finally print finely grained (lines may interleave between threads, but no line may be garbled)
+[0] print 0
+[0] print 1
+[1] print 0
+[2] print 0
+[3] print 0
+[0] print 2
+...
+[3] print 4
+DONE!</code></pre>
+<p>Perfect! And it the lock works too!</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/blog/run-xv6-ostep/">Running and debugging xv6 for OSTEP in a Docker container</a></li>
+</ul>
+<meta name="fediverse:creator" content="@0x1eaf@girlcock.club">
+
+			</heading-anchors>
+		</main>
+
+		<!-- This page `/blog/missing-race-condition/` was built on 2025-12-16T17:50:36.168Z -->
+		<script type="module" src="/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>
