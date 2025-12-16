@@ -166,7 +166,7 @@ Finally print finely grained (lines may interleave between threads, but no line 
 ...
 [3] print 4
 DONE!&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Perfect! And it the lock works too!&lt;/p&gt;
+&lt;p&gt;Perfect! And the lock works too!&lt;/p&gt;
 </content>
   </entry>
   <entry>
