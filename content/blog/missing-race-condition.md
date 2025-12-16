@@ -180,4 +180,4 @@ Finally print finely grained (lines may interleave between threads, but no line 
 [3] print 4
 DONE!
 ```
-Perfect! And it the lock works too!
+Perfect! And the lock works too!
