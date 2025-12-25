@@ -1,16 +1,15 @@
 ---js
 const eleventyNavigation = {
-	key: "ossu progress",
+	key: "cs progress",
 	order: 4
 };
 ---
 
-<h1 align="center">Open Source Society University</h1>
-<h2 align="center">Computer Science</h2>
+<h1 align="center">Computer Science Self-Study</h1>
 
 # Summary
 
-This repository tracks my progress through the OSSU Computer Science curriculum. I have made some modifications in order to fit my own goals better, or if i have other material that covers the same subject.
+This repository tracks my progress through the OSSU/Borr Computer Science curriculum. I have made some modifications in order to fit my own goals better, or if i have other material that covers the same subject.
 
 # Progress
 
