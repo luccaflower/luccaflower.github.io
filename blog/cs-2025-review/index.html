@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>2025 Computer Science Self-Study in Review</title>
+		<meta name="description" content="It&#39;s that time of the year again.">
+		<link rel="alternate" href="feed/feed.xml" type="application/atom+xml" title="0x1eaf">
+
+		<meta name="generator" content="Eleventy v3.1.2">
+		<style>/*
+ Gruvbox theme adapted from:
+
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+GRUVBOX HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #fbf1c7; /* base00 */
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+	background: #504945; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+	background: #504945; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background-color: #3c3836; /* bg1 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #a89984; /* fg4 */
+}
+
+.token.punctuation {
+	color: #ebdbb2; /* fg1 */
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #fe8019; /* orange */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+	color: #b8bb26; /* green */
+}
+
+.token.entity {
+	color: #a89984; /* base00 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+	color: #fabd2f; /* green */
+}
+
+.token.function,
+.token.class-name {
+	color: #83a598; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+	color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}
+/* This is an arbitrary CSS string added to the bundle */
+/* Defaults */
+:root {
+	--font-family: -apple-system, system-ui, monospace;
+	--font-family-monospace: Consolas, Menlo, Monaco, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Courier New, Courier, monospace;
+}
+
+/* Theme colors */
+:root {
+	--color-gray-20: #fbf1c7;
+	--color-gray-50: #ebdbb2;
+	--color-gray-90: #bdae93;
+
+		--background-color: #282828;
+
+	--text-color: var(--color-gray-90);
+	--text-color-link: #98971a;
+	--text-color-link-active: #d79921;
+	--text-color-link-visited: #b8bb26;
+
+	--syntax-tab-size: 2;
+}
+
+/* Global stylesheet */
+* {
+	box-sizing: border-box;
+}
+
+@view-transition {
+	navigation: auto;
+}
+
+html,
+body {
+	padding: 0;
+	margin: 0 auto;
+	font-family: var(--font-family-monospace);
+	color: var(--text-color);
+	background-color: var(--background-color);
+}
+html {
+	overflow-y: scroll;
+}
+body {
+	max-width: 40em;
+}
+
+/* https://www.a11yproject.com/posts/how-to-hide-content/ */
+.visually-hidden {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Fluid images via https://www.zachleat.com/web/fluid-images/ */
+img {
+  max-width: 100%;
+}
+img[width][height] {
+  height: auto;
+}
+img[src$=".svg"] {
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+
+p:last-child {
+	margin-bottom: 0;
+}
+p {
+	line-height: 1.5;
+}
+
+li {
+	line-height: 1.5;
+}
+
+a[href] {
+	color: var(--text-color-link);
+}
+a[href]:visited {
+	color: var(--text-color-link-visited);
+}
+a[href]:hover,
+a[href]:active {
+	color: var(--text-color-link-active);
+}
+
+main,
+footer {
+	padding: 1rem;
+}
+main :first-child {
+	margin-top: 0;
+}
+
+header {
+	border-bottom: 1px dashed var(--color-gray-20);
+}
+header:after {
+	content: "";
+	display: table;
+	clear: both;
+}
+
+.links-nextprev {
+	display: flex;
+	justify-content: space-between;
+	gap: .5em 1em;
+	list-style: "";
+	border-top: 1px dashed var(--color-gray-20);
+	padding: 1em 0;
+}
+.links-nextprev > * {
+	flex-grow: 1;
+}
+.links-nextprev-next {
+	text-align: right;
+}
+
+table {
+	margin: 1em 0;
+}
+table td,
+table th {
+	padding-right: 1em;
+}
+
+pre,
+code {
+	font-family: var(--font-family-monospace);
+}
+pre:not([class*="language-"]) {
+	margin: .5em 0;
+	line-height: 1.375; /* 22px /16 */
+	-moz-tab-size: var(--syntax-tab-size);
+	-o-tab-size: var(--syntax-tab-size);
+	tab-size: var(--syntax-tab-size);
+	-webkit-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+	direction: ltr;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	overflow-x: auto;
+}
+code {
+	word-break: break-all;
+  background-color: #3c3836;
+}
+
+/* Header */
+header {
+	display: flex;
+	gap: 1em .5em;
+	flex-wrap: wrap;
+	align-items: center;
+	padding: 1em;
+}
+.home-link {
+	font-size: 1em; /* 16px /16 */
+	font-weight: 700;
+	margin-right: 2em;
+}
+.home-link:link:not(:hover) {
+	text-decoration: none;
+}
+
+/* Nav */
+.nav {
+	display: flex;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.nav-item {
+	display: inline-block;
+	margin-right: 1em;
+}
+.nav-item a[href]:not(:hover) {
+	text-decoration: none;
+}
+.nav a[href][aria-current="page"] {
+	text-decoration: underline;
+}
+
+/* Posts list */
+.postlist {
+	list-style: none;
+	padding: 0;
+	padding-left: 1.5rem;
+}
+.postlist-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	counter-increment: start-from -1;
+	margin-bottom: 1em;
+}
+.postlist-item:before {
+	display: inline-block;
+	pointer-events: none;
+	content: "" counter(start-from, decimal-leading-zero) ". ";
+	line-height: 100%;
+	text-align: right;
+	margin-left: -1.5rem;
+}
+.postlist-date,
+.postlist-item:before {
+	font-size: 0.8125em; /* 13px /16 */
+	color: var(--color-gray-90);
+}
+.postlist-date {
+	word-spacing: -0.5px;
+}
+.postlist-link {
+	font-size: 1.1875em; /* 19px /16 */
+	font-weight: 700;
+	flex-basis: calc(100% - 1.5rem);
+	padding-left: .25em;
+	padding-right: .5em;
+	text-underline-position: from-font;
+	text-underline-offset: 0;
+	text-decoration-thickness: 1px;
+}
+.postlist-item-active .postlist-link {
+	font-weight: bold;
+}
+
+/* Tags */
+.post-tag {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: capitalize;
+	font-style: italic;
+}
+.postlist-item > .post-tag {
+	align-self: center;
+}
+
+/* Tags list */
+.post-metadata {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: .5em;
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.post-metadata time {
+	margin-right: 1em;
+}</style>
+	</head>
+	<body>
+		<a href="#skip" class="visually-hidden">Skip to main content</a>
+
+		<header>
+			<a href="/" class="home-link">0x1eaf</a>
+			<nav>
+				<h2 class="visually-hidden" id="top-level-navigation-menu">Top level navigation menu</h2>
+				<ul class="nav">
+					<li class="nav-item"><a href="/">home</a></li>
+					<li class="nav-item"><a href="/blog/">blog</a></li>
+					<li class="nav-item"><a href="/cv/">cv</a></li>
+					<li class="nav-item"><a href="/ossu/progress/">cs progress</a></li>
+					<li class="nav-item"><a href="/feed/feed.xml">rss/atom</a></li>
+					<li class="github"><a href="https://github.com/luccaflower">github</a>
+				</li></ul>
+			</nav>
+		</header>
+
+		<main id="skip">
+			<heading-anchors>
+				
+<h1 id="2025-computer-science-self-study-in-review">2025 Computer Science Self-Study in Review</h1>
+
+<ul class="post-metadata">
+	<li><time datetime="2025-12-26">26 December 2025</time></li>
+	<li><a href="/tags/computer-science/" class="post-tag">computer science</a>, </li>
+	<li><a href="/tags/self-study/" class="post-tag">self-study</a></li>
+</ul>
+<hr><strong>It&#39;s that time of the year again.</strong>
+
+<p>It didn't always feel like it, but 2025 was overall a pretty good year in terms of self-study. Despite a slump that lasted roughly four months,
+I honestly think I made a lot of progress, and it almost feels a bit weird to look back at. I didn't quite finish everything I had planned to,
+but that's ok. What it all comes down to is, the pace I was going at, coupled with a full-time job, was probably not sustainable, and I
+really needed that break. And then, once I got back into a good routine, it was all smooth sailing again. So let's have a look at what I've done this year:</p>
+<ul>
+<li><strong>Discrete Mathematics by Epp, S.</strong>: ✅ Completed</li>
+<li><strong>Introduction to Computer Systems by CMU</strong>: ✅ Completed</li>
+<li><strong>Stanford Online Algorithms Specialization:</strong> ⏩ In-progress, part 2/4</li>
+<li><strong>Operating Systems: Three Easy Pieces:</strong> ⏩ In-progress, chapter 3?/44</li>
+</ul>
+<h2 id="discrete-mathematics">Discrete Mathematics</h2>
+<p><a href="https://www.cengage.com/cgi-wadsworth/course_products_wp.pl?fid=M20b&amp;product_isbn_issn=9781337694193">Link</a></p>
+<p>'tis but a distant memory at this point. At least it feels like it. Finishing Epp was a long time coming, but I'm really glad I made it.
+It bears repeating that this book taught me how to enjoy math. It does an excellent job building up a mathematical foundation for CS students.</p>
+<p>I really appreciate that this book starts out with formal logic before anything else. It really forms the building blocks of how to <em>think</em> about
+math, which turns out to be very important once you reach the subject of algorithms.</p>
+<p>One of the final chapters is on the subject of the analysis of algorithms. I think many would consider it extracurricular, especially since a
+dedicated algorithms course will go much deeper into the subject, but I decided to do it nonetheless, and it's been very beneficial. It spends a lot
+of time on the mathematical background to the analysis of algorithms. I wrote a lot of proofs about certain functions being or not being at least or at most
+in the order of some other function and it gave me a strong mental model of how to reason about that notation later. Highly recommend.</p>
+<h2 id="introduction-to-computer-systems">Introduction to Computer Systems</h2>
+<p><a href="https://www.cs.cmu.edu/afs/cs/academic/class/15213-f15/www/index.html">Link</a></p>
+<p>In my last <a href="../ossu-2024-review">year in review</a> I had yet to do the malloc-lab, which I'd eventually write about <a href="../malloc">in this blog post</a>.
+Yet somehow I missed the most important lesson of all, which it turns out is <em>not</em> &quot;learning how malloc works under the hood provides a strong
+mental model for how to use malloc&quot;. That's a good lesson to learn for sure, but the more important lesson is that I know how to write custom memory
+allocators now, and I use them all the time. It's called arena allocators, and they're essentially custom memory allocators over blocks of memory
+that were allocated from the system memory allocator.</p>
+<p>The starting code for the malloc lab is something called a &quot;bump-allocator&quot;. It just has a pointer and a maximum. It allocates by increasing the pointer
+and returning its previous address. If it reaches the maximum, it fails. The way it's presented is sort of tongue-in-cheek &quot;this isn't very useful now, is it?&quot;.
+<em>And yet</em>. It turns out, if you have some function that does a bunch of allocations, and you know at runtime that it's gonna use at most X amount of memory,
+instead of dealing with all these different lifetimes of all these different pointers that you have to individually free when you're done with them
+and you absolutely <em>can't</em> free them *before you're done with them, and <em>lord help you</em> if you free it <em>twice</em>, instead of all that, what if you just
+had this <em>one</em> block of memory with a single lifetime, and you slice it up as you need it, and when you're finally done with it, you free it <em>once</em>.
+It turns out, this sort of thing happens a lot in C programming, and it turns out that a bump-allocator is incredibly useful for <em>this</em> use case in particular.
+As a result, I've made a lot of bump-allocators, especially in my algorithms course, which I decided to do in C because i'm Like That.</p>
+<p>There's a lot more to talk about with regards to this course. It made me a better programmer in many ways, and it has made OSTEP much <em>much</em> easier
+to work through.</p>
+<h2 id="stanford-online-algorithms-specialization">Stanford Online Algorithms Specialization</h2>
+<p><a href="https://www.algorithmsilluminated.org/">Link</a></p>
+<p>Algorithms is one of those things that are on my List of Things Every Programmer Should Know. This course definitely isn't the <em>easiest</em> introduction
+to the subject, but on the other hand it provides some very strong fundamentals in how to reason about algorithms. I was doing this course at a pretty
+quick pace, finishing part 1 and part 2 in about 4-5 weeks each, before I hit my slump. I'm pretty excited about starting part 3 after OSTEP, but I think
+I need to do one thing at a time right now.</p>
+<p>This is primarily a math course, and more specifically a proof-based course. It's proofs of correctness and proofs of runtime-analysis all the way down,
+rounding off with a little programming problem at the end of each section, which roughly boils down to &quot;implement this pseudocode and run it against the test cases&quot;.</p>
+<p>I chose C for the programming problems for one reason primarily: C doesn't give you a lot of things for free, so if you want, say, a hash table, you
+need to bring your own hash table. As a result, I've implemented all sorts of data structures, from index-based priority queues and binary trees to adjacency list graphs and, yes,
+hash tables, all from scratch, so I could use them in various algorithms. It's all about learning the internals to strengthen that mental model.</p>
+<p>The computer systems course, and in particular the deeper understanding of memory that follows, has been incredibly useful here. A lot of times I've
+found myself scanning the input to determine exactly how much memory and then allocating exactly that amount of memory for my data structure. Very cool stuff!</p>
+<p>I purchased the Algorithms Illuminated book by the course author some 2 years ago, and I've been using it as my primary resource for the course. It's
+pretty cheap for a university textbook, and <em>very</em> worth it. It's a lot more detailed with the math compared to the video lectures, in my opinion.</p>
+<h2 id="operating-systems-three-easy-pieces">Operating Systems: Three Easy Pieces</h2>
+<p><a href="https://borrproject.github.io/computer-science/systems/ostep/#extended-approach">Link</a></p>
+<p>Unlike the algorithms course, this might just be the easiest introduction to the subject you'll find. Not because it doesn't get difficult (it does),
+but moreso because Remzi and Andrea (most people seem to forget that there are two authors of this book) are really good at building you from the ground up
+to be able to handle that difficulty. This makes it very well-suited for self-study, and they made all of that available for free!</p>
+<p>This book is split into three main &quot;parts&quot; (or &quot;easy pieces&quot; as it were): virtualization, concurrency, and persistence. As of writing I have just
+finished the concurrency piece. The neat thing is, it explains things both from the client-side (what does a program need an operating system to do and why?)
+and from the OS side (how does an operating system implement that?). While the part on virtualization mostly built upon the things I had already learned from
+computer systems, the concurrency part has been a boon. It goes very deep into the weeds of how concurrency and threads work, how the POSIX threads API works(!),
+and what sort of concurrency primitives are needed (mostly locks and condition variables), not to mention how to use them to build various concurrent
+structures like a bounded consumer/producer queue (very useful). There are very few programs worth doing that don't involve concurrency in some manner,
+and having a good understanding of how that works is pretty essential in my opinion.</p>
+<p>With the OSTEP book and lectures there are also projects available to tie all these concepts together. I decided to do the same set of projects that were assigned
+to the Spring 2018 class at University of Wisconsin-Madison. Much like the book, there are projects focused on the client-side (make a program that uses these OS features),
+and projects that are essentially kernel hacking projects that have you implement some feature into the xv6 operating system.</p>
+<p>One thing about the kernel hacking projects that I hadn't thought about before I did them, but which I think might be a seriously underrated aspect of them
+is that they give the student some real experience working with a fairly substantial existing code base in order to implement a feature without breaking
+anything else. This is something that most CS graduates will be doing when they start working in the field, and more importantly, this is not something
+CS students get a lot of experience with during school. This alone is a good reason for anyone to do at least some of these projects.</p>
+<h2 id="so-what-did-we-learn">So what did we learn</h2>
+<p>It would appear that learning how to not get to the point where I have to force myself to relax will always be a challenge. This time it resulted in
+a four month break. The alternative might just have been burnout. The problem, it seems, is that once I get fixated on something, I can't let it go.
+It's just how my brain works. I need to find another relaxing video game to play when I get like that, I think.</p>
+<p>At some point during the year I had made it my goal to finish OSTEP, Algorithms, and Computer Networking by the end of the year. Alas, the slump
+ensured that wasn't going to happened, but I think that's ok. After all, I made a lot of progress regardless, and there's always next year. As long as
+I keep putting one food in front of the other, that's all that really matters.</p>
+<h2 id="looking-ahead">Looking ahead</h2>
+<p>With concurrency being (most likely) the longest and most difficult part of OSTEP, that course is nearing its end. After that I'll finish up Algorithms,
+but then what?</p>
+<p>There's one subject that I am absolutely certain I will study, which is Computer Networking. The plan is to use course materials based on the free
+online textbook <a href="https://book.systemsapproach.org/">Computer Networks: A Systems Approach</a>. It's just such a natural progression from all
+the systems-level programming I've done so far, and as you might be able to tell, I like learning how things work under the hood.</p>
+<p>Another thing I've considered is the <a href="https://15445.courses.cs.cmu.edu/fall2024/">Database Systems</a> course from CMU (they really like skulls on this one),
+another systems based course. This one has you implement things in a database using C++! I bet there's gonna be a lot of concurrency in this one.</p>
+<p>And finally, I've taken an interest in computing history and I'd love to learn more. It's a bit of a detour from computer <em>science</em>, but I'd say
+it's still relevant, and history is important!</p>
+
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/blog/missing-race-condition/">The Case of the Missing Race Condition</a></li>
+</ul>
+<meta name="fediverse:creator" content="@0x1eaf@girlcock.club">
+
+			</heading-anchors>
+		</main>
+
+		<!-- This page `/blog/cs-2025-review/` was built on 2025-12-26T18:30:12.256Z -->
+		<script type="module" src="/dist/cC8wS6ZjFU.js"></script>
+	</body>
+</html>

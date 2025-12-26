@@ -5,11 +5,106 @@
   <subtitle>Personal site and blog.</subtitle>
   <link href="https://0x1eaf.dev/feed/feed.xml" rel="self" />
   <link href="https://0x1eaf.dev/" />
-  <updated>2025-12-16T20:00:00Z</updated>
+  <updated>2025-12-26T18:30:00Z</updated>
   <id>https://0x1eaf.dev/</id>
   <author>
     <name>0x1eaf/lucca</name>
   </author>
+  <entry>
+    <title>2025 Computer Science Self-Study in Review</title>
+    <link href="https://0x1eaf.dev/blog/cs-2025-review/" />
+    <updated>2025-12-26T18:30:00Z</updated>
+    <id>https://0x1eaf.dev/blog/cs-2025-review/</id>
+    <content type="html">&lt;p&gt;It didn&#39;t always feel like it, but 2025 was overall a pretty good year in terms of self-study. Despite a slump that lasted roughly four months,
+I honestly think I made a lot of progress, and it almost feels a bit weird to look back at. I didn&#39;t quite finish everything I had planned to,
+but that&#39;s ok. What it all comes down to is, the pace I was going at, coupled with a full-time job, was probably not sustainable, and I
+really needed that break. And then, once I got back into a good routine, it was all smooth sailing again. So let&#39;s have a look at what I&#39;ve done this year:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Discrete Mathematics by Epp, S.&lt;/strong&gt;: ✅ Completed&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Introduction to Computer Systems by CMU&lt;/strong&gt;: ✅ Completed&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Stanford Online Algorithms Specialization:&lt;/strong&gt; ⏩ In-progress, part 2/4&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Operating Systems: Three Easy Pieces:&lt;/strong&gt; ⏩ In-progress, chapter 3?/44&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;discrete-mathematics&quot;&gt;Discrete Mathematics&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://www.cengage.com/cgi-wadsworth/course_products_wp.pl?fid=M20b&amp;amp;product_isbn_issn=9781337694193&quot;&gt;Link&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&#39;tis but a distant memory at this point. At least it feels like it. Finishing Epp was a long time coming, but I&#39;m really glad I made it.
+It bears repeating that this book taught me how to enjoy math. It does an excellent job building up a mathematical foundation for CS students.&lt;/p&gt;
+&lt;p&gt;I really appreciate that this book starts out with formal logic before anything else. It really forms the building blocks of how to &lt;em&gt;think&lt;/em&gt; about
+math, which turns out to be very important once you reach the subject of algorithms.&lt;/p&gt;
+&lt;p&gt;One of the final chapters is on the subject of the analysis of algorithms. I think many would consider it extracurricular, especially since a
+dedicated algorithms course will go much deeper into the subject, but I decided to do it nonetheless, and it&#39;s been very beneficial. It spends a lot
+of time on the mathematical background to the analysis of algorithms. I wrote a lot of proofs about certain functions being or not being at least or at most
+in the order of some other function and it gave me a strong mental model of how to reason about that notation later. Highly recommend.&lt;/p&gt;
+&lt;h2 id=&quot;introduction-to-computer-systems&quot;&gt;Introduction to Computer Systems&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://www.cs.cmu.edu/afs/cs/academic/class/15213-f15/www/index.html&quot;&gt;Link&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;In my last &lt;a href=&quot;https://0x1eaf.dev/blog/ossu-2024-review&quot;&gt;year in review&lt;/a&gt; I had yet to do the malloc-lab, which I&#39;d eventually write about &lt;a href=&quot;https://0x1eaf.dev/blog/malloc&quot;&gt;in this blog post&lt;/a&gt;.
+Yet somehow I missed the most important lesson of all, which it turns out is &lt;em&gt;not&lt;/em&gt; &amp;quot;learning how malloc works under the hood provides a strong
+mental model for how to use malloc&amp;quot;. That&#39;s a good lesson to learn for sure, but the more important lesson is that I know how to write custom memory
+allocators now, and I use them all the time. It&#39;s called arena allocators, and they&#39;re essentially custom memory allocators over blocks of memory
+that were allocated from the system memory allocator.&lt;/p&gt;
+&lt;p&gt;The starting code for the malloc lab is something called a &amp;quot;bump-allocator&amp;quot;. It just has a pointer and a maximum. It allocates by increasing the pointer
+and returning its previous address. If it reaches the maximum, it fails. The way it&#39;s presented is sort of tongue-in-cheek &amp;quot;this isn&#39;t very useful now, is it?&amp;quot;.
+&lt;em&gt;And yet&lt;/em&gt;. It turns out, if you have some function that does a bunch of allocations, and you know at runtime that it&#39;s gonna use at most X amount of memory,
+instead of dealing with all these different lifetimes of all these different pointers that you have to individually free when you&#39;re done with them
+and you absolutely &lt;em&gt;can&#39;t&lt;/em&gt; free them *before you&#39;re done with them, and &lt;em&gt;lord help you&lt;/em&gt; if you free it &lt;em&gt;twice&lt;/em&gt;, instead of all that, what if you just
+had this &lt;em&gt;one&lt;/em&gt; block of memory with a single lifetime, and you slice it up as you need it, and when you&#39;re finally done with it, you free it &lt;em&gt;once&lt;/em&gt;.
+It turns out, this sort of thing happens a lot in C programming, and it turns out that a bump-allocator is incredibly useful for &lt;em&gt;this&lt;/em&gt; use case in particular.
+As a result, I&#39;ve made a lot of bump-allocators, especially in my algorithms course, which I decided to do in C because i&#39;m Like That.&lt;/p&gt;
+&lt;p&gt;There&#39;s a lot more to talk about with regards to this course. It made me a better programmer in many ways, and it has made OSTEP much &lt;em&gt;much&lt;/em&gt; easier
+to work through.&lt;/p&gt;
+&lt;h2 id=&quot;stanford-online-algorithms-specialization&quot;&gt;Stanford Online Algorithms Specialization&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://www.algorithmsilluminated.org/&quot;&gt;Link&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Algorithms is one of those things that are on my List of Things Every Programmer Should Know. This course definitely isn&#39;t the &lt;em&gt;easiest&lt;/em&gt; introduction
+to the subject, but on the other hand it provides some very strong fundamentals in how to reason about algorithms. I was doing this course at a pretty
+quick pace, finishing part 1 and part 2 in about 4-5 weeks each, before I hit my slump. I&#39;m pretty excited about starting part 3 after OSTEP, but I think
+I need to do one thing at a time right now.&lt;/p&gt;
+&lt;p&gt;This is primarily a math course, and more specifically a proof-based course. It&#39;s proofs of correctness and proofs of runtime-analysis all the way down,
+rounding off with a little programming problem at the end of each section, which roughly boils down to &amp;quot;implement this pseudocode and run it against the test cases&amp;quot;.&lt;/p&gt;
+&lt;p&gt;I chose C for the programming problems for one reason primarily: C doesn&#39;t give you a lot of things for free, so if you want, say, a hash table, you
+need to bring your own hash table. As a result, I&#39;ve implemented all sorts of data structures, from index-based priority queues and binary trees to adjacency list graphs and, yes,
+hash tables, all from scratch, so I could use them in various algorithms. It&#39;s all about learning the internals to strengthen that mental model.&lt;/p&gt;
+&lt;p&gt;The computer systems course, and in particular the deeper understanding of memory that follows, has been incredibly useful here. A lot of times I&#39;ve
+found myself scanning the input to determine exactly how much memory and then allocating exactly that amount of memory for my data structure. Very cool stuff!&lt;/p&gt;
+&lt;p&gt;I purchased the Algorithms Illuminated book by the course author some 2 years ago, and I&#39;ve been using it as my primary resource for the course. It&#39;s
+pretty cheap for a university textbook, and &lt;em&gt;very&lt;/em&gt; worth it. It&#39;s a lot more detailed with the math compared to the video lectures, in my opinion.&lt;/p&gt;
+&lt;h2 id=&quot;operating-systems-three-easy-pieces&quot;&gt;Operating Systems: Three Easy Pieces&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://borrproject.github.io/computer-science/systems/ostep/#extended-approach&quot;&gt;Link&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Unlike the algorithms course, this might just be the easiest introduction to the subject you&#39;ll find. Not because it doesn&#39;t get difficult (it does),
+but moreso because Remzi and Andrea (most people seem to forget that there are two authors of this book) are really good at building you from the ground up
+to be able to handle that difficulty. This makes it very well-suited for self-study, and they made all of that available for free!&lt;/p&gt;
+&lt;p&gt;This book is split into three main &amp;quot;parts&amp;quot; (or &amp;quot;easy pieces&amp;quot; as it were): virtualization, concurrency, and persistence. As of writing I have just
+finished the concurrency piece. The neat thing is, it explains things both from the client-side (what does a program need an operating system to do and why?)
+and from the OS side (how does an operating system implement that?). While the part on virtualization mostly built upon the things I had already learned from
+computer systems, the concurrency part has been a boon. It goes very deep into the weeds of how concurrency and threads work, how the POSIX threads API works(!),
+and what sort of concurrency primitives are needed (mostly locks and condition variables), not to mention how to use them to build various concurrent
+structures like a bounded consumer/producer queue (very useful). There are very few programs worth doing that don&#39;t involve concurrency in some manner,
+and having a good understanding of how that works is pretty essential in my opinion.&lt;/p&gt;
+&lt;p&gt;With the OSTEP book and lectures there are also projects available to tie all these concepts together. I decided to do the same set of projects that were assigned
+to the Spring 2018 class at University of Wisconsin-Madison. Much like the book, there are projects focused on the client-side (make a program that uses these OS features),
+and projects that are essentially kernel hacking projects that have you implement some feature into the xv6 operating system.&lt;/p&gt;
+&lt;p&gt;One thing about the kernel hacking projects that I hadn&#39;t thought about before I did them, but which I think might be a seriously underrated aspect of them
+is that they give the student some real experience working with a fairly substantial existing code base in order to implement a feature without breaking
+anything else. This is something that most CS graduates will be doing when they start working in the field, and more importantly, this is not something
+CS students get a lot of experience with during school. This alone is a good reason for anyone to do at least some of these projects.&lt;/p&gt;
+&lt;h2 id=&quot;so-what-did-we-learn&quot;&gt;So what did we learn&lt;/h2&gt;
+&lt;p&gt;It would appear that learning how to not get to the point where I have to force myself to relax will always be a challenge. This time it resulted in
+a four month break. The alternative might just have been burnout. The problem, it seems, is that once I get fixated on something, I can&#39;t let it go.
+It&#39;s just how my brain works. I need to find another relaxing video game to play when I get like that, I think.&lt;/p&gt;
+&lt;p&gt;At some point during the year I had made it my goal to finish OSTEP, Algorithms, and Computer Networking by the end of the year. Alas, the slump
+ensured that wasn&#39;t going to happened, but I think that&#39;s ok. After all, I made a lot of progress regardless, and there&#39;s always next year. As long as
+I keep putting one food in front of the other, that&#39;s all that really matters.&lt;/p&gt;
+&lt;h2 id=&quot;looking-ahead&quot;&gt;Looking ahead&lt;/h2&gt;
+&lt;p&gt;With concurrency being (most likely) the longest and most difficult part of OSTEP, that course is nearing its end. After that I&#39;ll finish up Algorithms,
+but then what?&lt;/p&gt;
+&lt;p&gt;There&#39;s one subject that I am absolutely certain I will study, which is Computer Networking. The plan is to use course materials based on the free
+online textbook &lt;a href=&quot;https://book.systemsapproach.org/&quot;&gt;Computer Networks: A Systems Approach&lt;/a&gt;. It&#39;s just such a natural progression from all
+the systems-level programming I&#39;ve done so far, and as you might be able to tell, I like learning how things work under the hood.&lt;/p&gt;
+&lt;p&gt;Another thing I&#39;ve considered is the &lt;a href=&quot;https://15445.courses.cs.cmu.edu/fall2024/&quot;&gt;Database Systems&lt;/a&gt; course from CMU (they really like skulls on this one),
+another systems based course. This one has you implement things in a database using C++! I bet there&#39;s gonna be a lot of concurrency in this one.&lt;/p&gt;
+&lt;p&gt;And finally, I&#39;ve taken an interest in computing history and I&#39;d love to learn more. It&#39;s a bit of a detour from computer &lt;em&gt;science&lt;/em&gt;, but I&#39;d say
+it&#39;s still relevant, and history is important!&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>The Case of the Missing Race Condition</title>
     <link href="https://0x1eaf.dev/blog/missing-race-condition/" />
