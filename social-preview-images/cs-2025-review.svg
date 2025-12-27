@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="1200" height="628" viewBox="0 0 1200 628" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  
+	
+  
+  
+    
+  
+  
+  
+  <rect width="100%" height="100%" fill="#282828" />
+  <text text-anchor="start" font-family="Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace" font-size="60" fill="#bdae93">
+		<tspan x="50" y="100">0x1eaf.dev</tspan>
+  </text>
+	<line x1="50" y1="150" x2="1150" y2="150" stroke="#b8bb26" />
+  <text id="text" font-family="Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace" font-size="80" font-weight="bold" fill="#bdae93">
+  
+     <tspan x="50" y="250">2025 Computer</tspan>
+  
+     <tspan x="50" y="330">Science Self-Study</tspan>
+  
+     <tspan x="50" y="410">in Review</tspan>
+  
+  </text>
+  <text id="text" font-family="Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace" font-size="36" font-weight="bold" fill="#bdae93">
+  
+     <tspan x="50" y="490">It&#39;s that time of the year again.</tspan>
+  
+	</text>
+</svg>

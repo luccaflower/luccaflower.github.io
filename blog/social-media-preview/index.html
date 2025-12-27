@@ -3,12 +3,207 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Tagged &#39;ossu&#39;</title>
-		<meta name="description" content="Personal site and blog">
+		<title>Social Media Preview Images</title>
+		<meta name="description" content="Hell yeah!">
 		<link rel="alternate" href="feed/feed.xml" type="application/atom+xml" title="0x1eaf">
 
 		<meta name="generator" content="Eleventy v3.1.2">
-		<style>.postlist { counter-reset: start-from 4 }
+		<style>/*
+ Gruvbox theme adapted from:
+
+ Solarized Color Schemes originally by Ethan Schoonover
+ http://ethanschoonover.com/solarized
+
+ Ported for PrismJS by Hector Matos
+ Website: https://krakendev.io
+ Twitter Handle: https://twitter.com/allonsykraken)
+*/
+
+/*
+GRUVBOX HEX
+--------- -------
+base03    #002b36
+base02    #073642
+base01    #586e75
+base00    #657b83
+base0     #839496
+base1     #93a1a1
+base2     #eee8d5
+base3     #fdf6e3
+yellow    #b58900
+orange    #cb4b16
+red       #dc322f
+magenta   #d33682
+violet    #6c71c4
+blue      #268bd2
+cyan      #2aa198
+green     #859900
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+	color: #fbf1c7; /* base00 */
+	font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+	font-size: 1em;
+	text-align: left;
+	white-space: pre;
+	word-spacing: normal;
+	word-break: normal;
+	word-wrap: normal;
+
+	line-height: 1.5;
+
+	-moz-tab-size: 4;
+	-o-tab-size: 4;
+	tab-size: 4;
+
+	-webkit-hyphens: none;
+	-moz-hyphens: none;
+	-ms-hyphens: none;
+	hyphens: none;
+}
+
+pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,
+code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {
+	background: #504945; /* base02 */
+}
+
+pre[class*="language-"]::selection, pre[class*="language-"] ::selection,
+code[class*="language-"]::selection, code[class*="language-"] ::selection {
+	background: #504945; /* base02 */
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+	padding: 1em;
+	margin: .5em 0;
+	overflow: auto;
+	border-radius: 0.3em;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+	background-color: #3c3836; /* bg1 */
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+	padding: .1em;
+	border-radius: .3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+	color: #a89984; /* fg4 */
+}
+
+.token.punctuation {
+	color: #ebdbb2; /* fg1 */
+}
+
+.token.namespace {
+	opacity: .7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+	color: #fe8019; /* orange */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.url,
+.token.inserted {
+	color: #b8bb26; /* green */
+}
+
+.token.entity {
+	color: #a89984; /* base00 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+	color: #fabd2f; /* green */
+}
+
+.token.function,
+.token.class-name {
+	color: #83a598; /* yellow */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+	color: #cb4b16; /* orange */
+}
+
+.token.important,
+.token.bold {
+	font-weight: bold;
+}
+.token.italic {
+	font-style: italic;
+}
+
+.token.entity {
+	cursor: help;
+}
+/*
+ * New diff- syntax
+ */
+
+pre[class*="language-diff-"] {
+	--eleventy-code-padding: 1.25em;
+	padding-left: var(--eleventy-code-padding);
+	padding-right: var(--eleventy-code-padding);
+}
+.token.deleted {
+	background-color: hsl(0, 51%, 37%);
+	color: inherit;
+}
+.token.inserted {
+	background-color: hsl(126, 31%, 39%);
+	color: inherit;
+}
+
+/* Make the + and - characters unselectable for copy/paste */
+.token.prefix.unchanged,
+.token.prefix.inserted,
+.token.prefix.deleted {
+	-webkit-user-select: none;
+	user-select: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+.token.prefix.inserted,
+.token.prefix.deleted {
+	width: var(--eleventy-code-padding);
+	background-color: rgba(0,0,0,.2);
+}
+
+/* Optional: full-width background color */
+.token.inserted:not(.prefix),
+.token.deleted:not(.prefix) {
+	display: block;
+	margin-left: calc(-1 * var(--eleventy-code-padding));
+	margin-right: calc(-1 * var(--eleventy-code-padding));
+	text-decoration: none; /* override del, ins, mark defaults */
+	color: inherit; /* override del, ins, mark defaults */
+}
 /* This is an arbitrary CSS string added to the bundle */
 /* Defaults */
 :root {
@@ -270,6 +465,9 @@ header {
 	margin-right: 1em;
 }</style>
 		
+      <meta property="og:image" content="https://0x1eaf.dev/social-preview-images/social-media-preview.png">
+      <meta property="og:image:secure_url" content="https://0x1eaf.dev/social-preview-images/social-media-preview.png">
+    
 	</head>
 	<body>
 		<a href="#skip" class="visually-hidden">Skip to main content</a>
@@ -292,33 +490,29 @@ header {
 		<main id="skip">
 			<heading-anchors>
 				
-<h1 id="tagged-ossu">Tagged “ossu”</h1>
+<h1 id="social-media-preview-images">Social Media Preview Images</h1>
 
+<ul class="post-metadata">
+	<li><time datetime="2025-12-27">27 December 2025</time></li>
+	<li><a href="/tags/blog/" class="post-tag">blog</a>, </li>
+	<li><a href="/tags/meta/" class="post-tag">meta</a></li>
+</ul>
+<hr><strong>Hell yeah!</strong>
 
+<p>I think they're looking quite good :3</p>
+<p>Credit to <a href="https://blog.chobble.com/blog/25-01-19-social-preview-images/">this post</a> on a blog called Chobble
+for providing a baseline.</p>
+<p>Here it is!
+<img src="/social-preview-images/social-media-preview.png" alt="A social media preview image of this very blog post. It includes the domain name of the blog, the title of this post, and its description"></p>
 
-<ol reversed="" class="postlist">
-	<li class="postlist-item">
-		<a href="/blog/run-xv6-ostep/" class="postlist-link">Running and debugging xv6 for OSTEP in a Docker container</a>
-		<time class="postlist-date" datetime="2025-07-07">July 2025</time>
-	</li>
-	<li class="postlist-item">
-		<a href="/blog/malloc/" class="postlist-link">What I learned from re-implementing Malloc</a>
-		<time class="postlist-date" datetime="2025-02-01">February 2025</time>
-	</li>
-	<li class="postlist-item">
-		<a href="/blog/ossu-2024-review/" class="postlist-link">OSSU 2024 In Review</a>
-		<time class="postlist-date" datetime="2024-12-28">December 2024</time>
-	</li>
-</ol>
-
-
-<p>See <a href="/tags/">all tags</a>.</p>
-
+<ul class="links-nextprev"><li class="links-nextprev-prev">← Previous<br> <a href="/blog/cs-2025-review/">2025 Computer Science Self-Study in Review</a></li>
+</ul>
+<meta name="fediverse:creator" content="@0x1eaf@girlcock.club">
 
 			</heading-anchors>
 		</main>
 
-		<!-- This page `/tags/ossu/` was built on 2025-12-27T12:47:49.347Z -->
+		<!-- This page `/blog/social-media-preview/` was built on 2025-12-27T12:47:49.215Z -->
 		<script type="module" src="/dist/cC8wS6ZjFU.js"></script>
 	</body>
 </html>
