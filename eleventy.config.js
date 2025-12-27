@@ -3,6 +3,8 @@ import { feedPlugin } from "@11ty/eleventy-plugin-rss";
 import pluginSyntaxHighlight from "@11ty/eleventy-plugin-syntaxhighlight";
 import pluginNavigation from "@11ty/eleventy-navigation";
 import pluginFilters from "./_config/filters.js";
+import Image from "@11ty/eleventy-img"
+import fs from "fs/promises"
 
 /** @param {import("@11ty/eleventy").UserConfig} eleventyConfig */
 export default async function(eleventyConfig) {
@@ -26,7 +28,7 @@ export default async function(eleventyConfig) {
 	// https://www.11ty.dev/docs/watch-serve/#add-your-own-watch-targets
 
 	// Watch content images for the image pipeline.
-	eleventyConfig.addWatchTarget("content/**/*.{svg,webp,png,jpeg}");
+	eleventyConfig.addWatchTarget("content/**/*.{svg,webp,png,jpeg,njk}");
 
 	// Per-page bundles, see https://github.com/11ty/eleventy-plugin-bundle
 	// Adds the {% css %} paired shortcode
@@ -84,6 +86,78 @@ export default async function(eleventyConfig) {
 		return (new Date()).toISOString();
 	});
 
+eleventyConfig.addFilter("splitlines", function (input, maxChars = 32, maxLines = 4) {
+  if (!input) return [];
+
+		const words = input.trim().split(/\s+/);
+		const lines = [];
+
+    for (const word of words) {
+      if (!lines.length) {
+        lines.push(word);
+        continue;
+      }
+
+      const lastLine = lines[lines.length - 1];
+
+      // Would adding this word exceed the line length?
+      if (lastLine.length + word.length + 1 > maxChars) {
+        // Are we about to exceed max lines?
+        if (lines.length === maxLines) {
+          // Add ellipsis to the last line
+          lines[lines.length - 1] = truncateWithEllipsis(
+            lastLine,
+            maxChars
+          );
+          break;
+        }
+
+        lines.push(word);
+      } else {
+        lines[lines.length - 1] = `${lastLine} ${word}`;
+      }
+    }
+
+    // If we exactly filled maxLines but still have words left
+    if (lines.length === maxLines && words.join(" ").length > lines.join(" ").length) {
+      lines[lines.length - 1] = truncateWithEllipsis(
+        lines[lines.length - 1],
+        maxChars
+      );
+    }
+
+    return lines;
+  }
+);
+
+function truncateWithEllipsis(line, maxChars) {
+  const ellipsis = "…";
+  if (line.length <= maxChars - ellipsis.length) {
+    return line + ellipsis;
+  }
+  return line.slice(0, maxChars - ellipsis.length).trimEnd() + ellipsis;
+}
+
+eleventyConfig.on("eleventy.after", async ({ directories }) => {
+  const outDir = directories.output;
+  const socialPreviewImagesDir = `${outDir}social-preview-images/`;
+
+  const files = await fs.readdir(socialPreviewImagesDir);
+  if (files.length === 0) return;
+
+  files.forEach(async (filename) => {
+		if (!filename.endsWith(".svg")) return;
+		const imageUrl = socialPreviewImagesDir + filename;
+		await Image(imageUrl, {
+			formats: ["png"],
+			outputDir: "./" + socialPreviewImagesDir,
+			filenameFormat: (id, src, width, format, options) => {
+				const outputFilename = filename.substring(0, filename.length - 4);
+				return `${outputFilename}.${format}`;
+			},
+		});
+	});
+},);
 
 	// Features to make your build faster (when you need them)
 

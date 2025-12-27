@@ -28,7 +28,10 @@
 
 		{#- Render the CSS bundle using inlined CSS (for the fastest site performance in production) #}
 		<style>{% getBundle "css" %}</style>
-
+		{% if tags %}
+      <meta property="og:image" content="https://0x1eaf.dev/social-preview-images/{{ page.fileSlug }}.png" />
+      <meta property="og:image:secure_url" content="https://0x1eaf.dev/social-preview-images/{{ page.fileSlug }}.png" />
+    {% endif %}
 		{#- Add the heading-anchors web component to the JavaScript bundle #}
 		{%- js %}{% include "node_modules/@zachleat/heading-anchors/heading-anchors.js" %}{% endjs %}
 	</head>
