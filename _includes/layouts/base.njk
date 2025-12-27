@@ -31,6 +31,8 @@
 		{% if tags %}
       <meta property="og:image" content="https://0x1eaf.dev/social-preview-images/{{ page.fileSlug }}.png" />
       <meta property="og:image:secure_url" content="https://0x1eaf.dev/social-preview-images/{{ page.fileSlug }}.png" />
+			<meta property="og:image:width" content="1200" />
+			<meta property="og:image:height" content="628" />
     {% endif %}
 		{#- Add the heading-anchors web component to the JavaScript bundle #}
 		{%- js %}{% include "node_modules/@zachleat/heading-anchors/heading-anchors.js" %}{% endjs %}
