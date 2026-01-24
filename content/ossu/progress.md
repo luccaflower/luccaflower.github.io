@@ -54,7 +54,7 @@ This repository tracks my progress through the OSSU/Borr Computer Science curric
 | :-----------------: | :------------------------------------------------------------------------------------------------------------------------------: | :-------------: | :-------: |
 | Stanford University | [Divide and Conquer, Sorting and Searching, and Randomized Algorithms](https://www.coursera.org/learn/algorithms-divide-conquer) |    2025-07-05   |     ✅    |
 | Stanford University |      [Graph Search, Shortest Paths, and Data Structures](https://www.coursera.org/learn/algorithms-graphs-data-structures)       |    2025-07-26   |     ✅    |
-| Stanford University |      [Greedy Algorithms, Minimum Spanning Trees, and Dynamic Programming](https://www.coursera.org/learn/algorithms-greedy)      |        -        |     -     |
+| Stanford University |      [Greedy Algorithms, Minimum Spanning Trees, and Dynamic Programming](https://www.coursera.org/learn/algorithms-greedy)      |        -        |     ⏩    |
 | Stanford University | [Shortest Paths Revisited, NP-Complete Problems and What To Do About Them](https://www.coursera.org/learn/algorithms-npcomplete) |        -        |     -     |
 
 ### Core Security
